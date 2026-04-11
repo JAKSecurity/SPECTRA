@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Data (regenerable monthly output)
+data/sources/
+data/drafts/*.json
+data/drafts/*.md
+data/cache/
+
+# Output (regenerable)
+output/
+
+# Reference materials (not distributed)
+references/
+
+# Environment / secrets
+.env
+
+# Claude Code workspace
+.claude/
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db

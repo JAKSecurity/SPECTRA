@@ -1,0 +1,117 @@
+# SPECTRA source configuration
+# type: fetcher class to use (rss is the generic RSS/Atom fetcher)
+# category_hint: default SPECTRA section hint for items from this source
+
+sources:
+
+  # --- Government / Policy ---
+
+  nist_csrc:
+    type: rss
+    url: "https://www.nist.gov/blogs/cybersecurity-insights/rss.xml"
+    category_hint: publication
+    enabled: true
+
+  cisa_alerts:
+    type: rss
+    url: "https://www.cisa.gov/cybersecurity-advisories/all.xml"
+    category_hint: policy
+    enabled: true
+
+  # --- Federal Cyber News ---
+
+  cyberscoop:
+    type: rss
+    url: "https://cyberscoop.com/feed/"
+    category_hint: news
+    enabled: true
+
+  nextgov:
+    type: rss
+    url: "https://www.nextgov.com/rss/cybersecurity/"
+    category_hint: news
+    enabled: true
+
+  dark_reading:
+    type: rss
+    url: "https://www.darkreading.com/rss.xml"
+    category_hint: news
+    enabled: true
+
+  the_record:
+    type: rss
+    url: "https://therecord.media/feed"
+    category_hint: news
+    enabled: true
+
+  # --- AI / Agentic ---
+
+  openai_blog:
+    type: rss
+    url: "https://openai.com/blog/rss.xml"
+    category_hint: ai
+    enabled: true
+
+  google_ai_blog:
+    type: rss
+    url: "https://blog.google/technology/ai/rss/"
+    category_hint: ai
+    enabled: true
+
+  deepmind_blog:
+    type: rss
+    url: "https://deepmind.google/blog/rss.xml"
+    category_hint: ai
+    enabled: true
+
+  the_verge_ai:
+    type: rss
+    url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+    category_hint: ai
+    enabled: true
+
+  mit_tech_review_ai:
+    type: rss
+    url: "https://www.technologyreview.com/topic/artificial-intelligence/feed"
+    category_hint: ai
+    enabled: true
+
+  executive_orders:
+    type: rss
+    url: "https://www.whitehouse.gov/presidential-actions/feed/"
+    category_hint: policy
+    enabled: true
+
+  fedramp_notices:
+    type: rss
+    url: "https://www.fedramp.gov/notices/rss.xml"
+    category_hint: policy
+    enabled: true
+
+  fedramp_changelog:
+    type: rss
+    url: "https://www.fedramp.gov/changelog/rss.xml"
+    category_hint: policy
+    enabled: true
+
+  # --- Government APIs ---
+
+  federal_register:
+    type: federal_register
+    search_term: "cybersecurity"
+    days_back: 30
+    category_hint: policy
+    enabled: true
+
+  cisa_kev:
+    type: cisa_kev
+    days_back: 30
+    category_hint: threats
+    enabled: true
+
+  congress_gov:
+    type: congress_gov
+    search_term: "cybersecurity"
+    days_back: 30
+    category_hint: legislative
+    enabled: true
