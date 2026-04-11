@@ -10,7 +10,7 @@ AI-generated monthly cybersecurity policy digest for DoD/federal practitioners.
 ## Pipeline
 
 ```
-1. spectra-curate task         -> collect, prep, curate, draft, render (single monthly run)
+1. spectra-monthly task        -> collect, prep, curate, draft, render (single monthly run)
 2. [Human reviews draft + PDF in-session]
 ```
 
