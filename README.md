@@ -34,9 +34,7 @@ All sources are public and unclassified. See `src/collect/config.yaml` for the f
 
 ## Pipeline
 
-```
-Collect (17 sources) --> Prep (dedup) --> Curate (AI) --> Render (PDF) --> Deliver (email + Discord)
-```
+![SPECTRA architecture](docs/diagrams/architecture.svg)
 
 The entire pipeline runs as a single [Claude Code](https://docs.anthropic.com/en/docs/claude-code) scheduled task. Claude reads the raw items, categorizes each into the appropriate section, writes a 2-3 sentence summary, scores relevance, consolidates duplicate stories, and assembles the markdown draft. No API key needed -- runs on the Claude Code subscription.
 

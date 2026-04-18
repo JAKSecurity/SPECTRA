@@ -1,0 +1,85 @@
+# SPECTRA — monthly cybersecurity policy digest pipeline.
+# Fans in 17 public sources across 3 categories, runs a 5-stage pipeline
+# driven by a scheduled Claude Code task, and delivers a branded PDF via
+# email and Discord.
+
+...@~/.claude/skills/d2-diagram/assets/jak-dark
+
+direction: right
+
+sources: 17 Sources {
+  class: panel
+
+  gov: Government (8)\nNIST • CISA • FedRAMP\nFederal Register • Congress {
+    class: external
+    icon: https://api.iconify.design/tabler/building-bank.svg
+  }
+
+  news: Industry News (4)\nCyberScoop • Nextgov\nDark Reading • The Record {
+    class: external
+    icon: https://api.iconify.design/tabler/news.svg
+  }
+
+  ai: AI Research (5)\nOpenAI • Google AI • DeepMind\nThe Verge • MIT Tech Review {
+    class: external
+    icon: https://api.iconify.design/tabler/brain.svg
+  }
+}
+
+collect: Collect\nRSS + HTTP fetchers {
+  class: compute
+  icon: https://api.iconify.design/tabler/rss.svg
+}
+
+prep: Prep\ndedup + normalize {
+  class: service
+  icon: https://api.iconify.design/tabler/filter.svg
+}
+
+curate: Curate\ncategorize • score • summarize {
+  class: agent
+  icon: https://api.iconify.design/tabler/robot.svg
+}
+
+claude: Claude\nscheduled task {
+  class: llm
+  icon: https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/anthropic.svg
+}
+
+render: Render\nmarkdown → PDF {
+  class: service
+  icon: https://api.iconify.design/tabler/file-type-pdf.svg
+}
+
+digest: Monthly Digest\n7 sections • top 20 per section {
+  class: success
+  icon: https://api.iconify.design/tabler/file-text.svg
+}
+
+deliver: Deliver {
+  class: queue
+  icon: https://api.iconify.design/tabler/send.svg
+}
+
+email: Email {
+  class: success
+  icon: https://api.iconify.design/tabler/mail.svg
+}
+
+discord: Discord {
+  class: success
+  icon: https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/discord.svg
+}
+
+sources.gov -> collect
+sources.news -> collect
+sources.ai -> collect
+
+collect -> prep: raw items
+prep -> curate: deduped
+curate <-> claude: reason
+curate -> render: markdown draft
+render -> digest
+digest -> deliver
+deliver -> email
+deliver -> discord
