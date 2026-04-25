@@ -48,7 +48,7 @@ The entire pipeline runs as a single [Claude Code](https://docs.anthropic.com/en
 ### Install
 
 ```bash
-git clone https://github.com/jak3676/SPECTRA.git
+git clone https://github.com/JAKSecurity/SPECTRA.git
 cd SPECTRA
 pip install -r requirements.txt
 ```
