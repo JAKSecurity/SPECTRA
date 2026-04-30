@@ -1,5 +1,27 @@
 # SPECTRA Backlog
 
+> **Status: Complete.** All 4 phases delivered; monthly pipeline running unattended. Per-phase checklist preserved below as historical record.
+
+## Capabilities
+
+| ID | Name | Status | Phase | Priority | Depends On | Description |
+|----|------|--------|-------|----------|------------|-------------|
+| C1 | Foundation | Delivered | Phase 1 | P1 |  | Python project + collect/curate/render pipeline + first test issue (sources, dedup, markdown→PDF, scheduled task wiring) |
+| C2 | Full source coverage | Delivered | Phase 2 | P1 | C1 | Federal Register, Congress.gov, CISA KEV, AI vendor/news feeds, Executive Orders, FedRAMP, The Record, RSS hygiene, monthly cadence |
+| C3 | Automation & polish | Delivered | Phase 3 | P2 | C2 | Branded PDF template, relevance scoring + keyword tuning, source health monitoring with empty-source warnings |
+| C4 | Integration | Delivered | Phase 4 | P1 | C3 | projects.yaml + briefing integration, scheduled monthly run, email + Discord delivery, Brain entry, TELOS Live Pulse |
+
+## Active
+
+| ID | Title | Status | Priority | Capability | Ticket |
+|----|-------|--------|----------|------------|--------|
+
+_(No active items — monthly pipeline running unattended; future enhancements would open new tickets here.)_
+
+## Historical detail (pre-canonicalization)
+
+The original phase-by-phase checklist below preserves what was delivered in each phase. Going forward, work units are tracked as `## Active` rows and capability rows above; this section is read-only.
+
 ## Phase 1: Foundation (COMPLETE)
 
 - [x] Set up Python project (requirements.txt)
