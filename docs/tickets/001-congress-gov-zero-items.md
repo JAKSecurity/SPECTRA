@@ -1,7 +1,6 @@
 # 001: congress_gov source returns 0 items (chronic since first run)
-**Status**: Blocked  **Priority**: P2  **Type**: Bug
-**Created**: 2026-06-03
-**Blocked by**: Jeff -- obtain + store a free Congress.gov API key (api.congress.gov/sign-up, then /vault-new-secret)
+**Status**: Delivered  **Priority**: P2  **Type**: Bug
+**Created**: 2026-06-03  **Resolved**: 2026-06-03
 
 ## Summary
 The `congress_gov` source (Congress.gov API fetcher for cybersecurity bills) has returned
@@ -41,18 +40,31 @@ confirmed never-worked (not a regression).
 Decision (Jeff, 2026-06-03): get a key and wire it (vs. disabling the source).
 
 Code wired this session (`src/collect/fetchers/congress_gov.py`): api-key resolution is now
-`config.api_key` -> env `CONGRESS_GOV_API_KEY` -> `keyring.get_password("spectra",
-"CONGRESS_GOV_API_KEY")`, with a safe `_keyring_api_key()` helper that returns "" on any
+`config.api_key` -> env `CONGRESS_GOV_API_KEY` -> `keyring.get_password("ai-assistant",
+"CONGRESS_GOV_API_KEY")` (the shared vault namespace used by scripts/secret_store.py), with a
+safe `_keyring_api_key()` helper that returns "" on any
 failure (preserves graceful-empty behavior when no key). `keyring>=24.0` added to
 requirements.txt. Verified: no-key path still returns empty without crashing; full suite green
 (59 passed). The fetcher will return bills as soon as the key is stored -- no further code
 change needed.
 
-### Remaining (to close)
-1. Jeff: get a free key at https://api.congress.gov/sign-up/ (emailed, ~2 min).
-2. Store it via `/vault-new-secret` -> keyring service `spectra`, key `CONGRESS_GOV_API_KEY`.
-3. Verify: run the congress_gov fetcher; confirm items > 0 and `_health.json` shows congress_gov
-   with a non-zero count on the next (or a forced) run. Then flip this ticket to Delivered.
+### Closed (2026-06-03)
+Key provisioned to keyring (`ai-assistant` / `CONGRESS_GOV_API_KEY`) and **verified**: the
+congress_gov fetcher returned 20 bills (HRES 1025, HR 3033, S 2975, S 1199, ...) through
+SPECTRA's own code path. Full suite green (60 passed).
+
+**Secret-leak hardening (done same session):** while verifying, the key leaked into the run
+transcript because the fetcher passed `api_key` as a URL query param and `requests` embeds the
+full URL in `ConnectionError`/`HTTPError` messages. Fixes:
+- Key now sent as an `X-Api-Key` **header**, never in the URL -> no URL-based error leaks it.
+- Replaced `resp.raise_for_status()` with a scrubbed `RuntimeError(f"... HTTP {code}")`.
+- New regression test `test_error_response_does_not_leak_api_key` asserts the secret is absent
+  from any raised error.
+
+**Provisioning note:** `getpass` paste was unreliable in the terminal (stored the key doubled,
+then truncated to 1 char). Reliable method that worked: paste into a temp file, read+strip into
+keyring, print length only, delete the file. The leaked key value should be regenerated if not
+already (low severity -- read-only public-data key, rate-limit only).
 
 ## References
 - Source collector: `src/` Congress.gov fetcher (`congress_gov`)

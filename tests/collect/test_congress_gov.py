@@ -46,7 +46,11 @@ class TestCongressGovFetcher:
         config = {"search_term": "cybersecurity", "category_hint": "legislative"}
         fetcher = CongressGovFetcher("congress_gov", config)
 
-        with patch.dict("os.environ", {}, clear=True):
+        # Clear env AND the keyring fallback so the test reflects "no key anywhere"
+        # regardless of what is provisioned on the machine running the suite.
+        with patch.dict("os.environ", {}, clear=True), patch(
+            "src.collect.fetchers.congress_gov._keyring_api_key", return_value=""
+        ):
             result = fetcher.fetch()
 
         assert result.source == "congress_gov"
@@ -58,7 +62,7 @@ class TestCongressGovFetcher:
 
         mock_resp = MagicMock()
         mock_resp.json.return_value = MOCK_CONGRESS_RESPONSE
-        mock_resp.raise_for_status = MagicMock()
+        mock_resp.status_code = 200
 
         with patch("src.collect.fetchers.congress_gov.requests.get", return_value=mock_resp):
             result = fetcher.fetch()
@@ -74,7 +78,7 @@ class TestCongressGovFetcher:
 
         mock_resp = MagicMock()
         mock_resp.json.return_value = MOCK_CONGRESS_RESPONSE
-        mock_resp.raise_for_status = MagicMock()
+        mock_resp.status_code = 200
 
         with patch("src.collect.fetchers.congress_gov.requests.get", return_value=mock_resp):
             result = fetcher.fetch()
@@ -87,7 +91,7 @@ class TestCongressGovFetcher:
 
         mock_resp = MagicMock()
         mock_resp.json.return_value = MOCK_CONGRESS_RESPONSE
-        mock_resp.raise_for_status = MagicMock()
+        mock_resp.status_code = 200
 
         with patch("src.collect.fetchers.congress_gov.requests.get", return_value=mock_resp):
             result = fetcher.fetch()
@@ -101,9 +105,29 @@ class TestCongressGovFetcher:
 
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"bills": []}
-        mock_resp.raise_for_status = MagicMock()
+        mock_resp.status_code = 200
 
         with patch("src.collect.fetchers.congress_gov.requests.get", return_value=mock_resp):
             result = fetcher.fetch()
 
         assert len(result.items) == 0
+
+    def test_error_response_does_not_leak_api_key(self):
+        # Security: an HTTP error must NOT surface the api_key. raise_for_status()
+        # would embed the request URL (with ?api_key=...) in the exception; the
+        # fetcher must raise a scrubbed error instead. Ticket 001.
+        import pytest
+
+        secret = "SUPERSECRETKEY12345"
+        config = {"api_key": secret, "search_term": "cybersecurity", "category_hint": "legislative"}
+        fetcher = CongressGovFetcher("congress_gov", config)
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 403
+
+        with patch("src.collect.fetchers.congress_gov.requests.get", return_value=mock_resp):
+            with pytest.raises(Exception) as exc_info:
+                fetcher.fetch()
+
+        assert secret not in str(exc_info.value)
+        assert "403" in str(exc_info.value)

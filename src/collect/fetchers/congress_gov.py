@@ -15,15 +15,17 @@ def _bill_url(congress: int, bill_type: str, number: str) -> str:
 
 
 def _keyring_api_key() -> str:
-    """Read the Congress.gov API key from the OS keyring (service 'spectra').
+    """Read the Congress.gov API key from the OS keyring.
 
-    Safe fallback: any failure (keyring missing, no entry, backend error) returns
-    "" so collection degrades to an empty result instead of crashing -- matching
-    the prior no-key behavior. Ticket 001."""
+    Uses the shared 'ai-assistant' keyring service (the same namespace
+    scripts/secret_store.py provisions, so the standard vault tooling manages
+    this key). Safe fallback: any failure (keyring missing, no entry, backend
+    error) returns "" so collection degrades to an empty result instead of
+    crashing -- matching the prior no-key behavior. Ticket 001."""
     try:
         import keyring
 
-        return keyring.get_password("spectra", "CONGRESS_GOV_API_KEY") or ""
+        return keyring.get_password("ai-assistant", "CONGRESS_GOV_API_KEY") or ""
     except Exception:
         return ""
 
@@ -48,6 +50,10 @@ class CongressGovFetcher(BaseFetcher):
 
         since = (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%dT00:00:00Z")
 
+        # Pass the key as a header, NOT a query param: requests embeds the full
+        # URL (query string included) in ConnectionError/Timeout/HTTPError messages,
+        # which would leak the api_key into tracebacks/logs. A header keeps it out
+        # of every URL-based error path. Ticket 001.
         resp = requests.get(
             "https://api.congress.gov/v3/bill",
             params={
@@ -55,11 +61,16 @@ class CongressGovFetcher(BaseFetcher):
                 "sort": "updateDate+desc",
                 "limit": 20,
                 "fromDateTime": since,
-                "api_key": api_key,
             },
+            headers={"X-Api-Key": api_key},
             timeout=30,
         )
-        resp.raise_for_status()
+        # Do NOT use resp.raise_for_status(): the request URL carries api_key as a
+        # query param, and raise_for_status() embeds the full URL (with the key) in
+        # the exception message -- leaking the secret into tracebacks/logs. Raise a
+        # scrubbed error instead. Ticket 001.
+        if resp.status_code != 200:
+            raise RuntimeError(f"congress_gov API error: HTTP {resp.status_code}")
         data = resp.json()
 
         items = []
