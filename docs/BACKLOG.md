@@ -15,8 +15,8 @@
 
 | ID | Title | Status | Priority | Capability | Ticket |
 |----|-------|--------|----------|------------|--------|
-| 001 | congress_gov source returns 0 items (chronic since first run, 2026-04) | Open | P2 | C3 | Y |
-| 002 | openai_blog source regressed to 0 items in 2026-06 (was ~929) | Open | P2 | C3 | Y |
+| 001 | congress_gov source returns 0 items (chronic since first run, 2026-04) | Blocked | P2 | C3 | Y |
+| 002 | openai_blog source regressed to 0 items in 2026-06 (was ~929) | Delivered | P2 | C3 | Y |
 
 _Monthly pipeline running unattended. Two source collectors are returning 0 items (tickets 001/002) -- detection works (source-health warnings fire) but the feeds need repair._
 

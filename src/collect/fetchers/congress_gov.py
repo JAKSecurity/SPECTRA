@@ -14,9 +14,27 @@ def _bill_url(congress: int, bill_type: str, number: str) -> str:
     return f"https://www.congress.gov/bill/{congress}th-congress/{chamber}-bill/{number}"
 
 
+def _keyring_api_key() -> str:
+    """Read the Congress.gov API key from the OS keyring (service 'spectra').
+
+    Safe fallback: any failure (keyring missing, no entry, backend error) returns
+    "" so collection degrades to an empty result instead of crashing -- matching
+    the prior no-key behavior. Ticket 001."""
+    try:
+        import keyring
+
+        return keyring.get_password("spectra", "CONGRESS_GOV_API_KEY") or ""
+    except Exception:
+        return ""
+
+
 class CongressGovFetcher(BaseFetcher):
     def fetch(self) -> FetchResult:
-        api_key = self.config.get("api_key") or os.environ.get("CONGRESS_GOV_API_KEY", "")
+        api_key = (
+            self.config.get("api_key")
+            or os.environ.get("CONGRESS_GOV_API_KEY", "")
+            or _keyring_api_key()
+        )
         search_term = self.config.get("search_term", "cybersecurity")
         days_back = self.config.get("days_back", 30)
         category_hint = self.config.get("category_hint", "legislative")

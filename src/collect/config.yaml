@@ -48,7 +48,9 @@ sources:
 
   openai_blog:
     type: rss
-    url: "https://openai.com/blog/rss.xml"
+    # Canonical feed (200). The old /blog/rss.xml 307-redirects to this; a run
+    # that didn't follow the redirect returned 0 items (ticket 002, 2026-06).
+    url: "https://openai.com/news/rss.xml"
     category_hint: ai
     enabled: true
 

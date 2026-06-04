@@ -1,6 +1,7 @@
 # 001: congress_gov source returns 0 items (chronic since first run)
-**Status**: Open  **Priority**: P2  **Type**: Bug
+**Status**: Blocked  **Priority**: P2  **Type**: Bug
 **Created**: 2026-06-03
+**Blocked by**: Jeff -- obtain + store a free Congress.gov API key (api.congress.gov/sign-up, then /vault-new-secret)
 
 ## Summary
 The `congress_gov` source (Congress.gov API fetcher for cybersecurity bills) has returned
@@ -30,6 +31,28 @@ the same as returning items.
       API request, key, query params, and raw response).
 - [ ] Fix so a normal month returns a non-trivial item count.
 - [ ] Confirm a subsequent (or forced) run reports congress_gov with items > 0 in `_health.json`.
+
+## Diagnosis confirmed + wiring done (2026-06-03)
+Root cause verified: `CONGRESS_GOV_API_KEY` is referenced **only** in the fetcher. SPECTRA has
+no `.env`, no keyring loader, and the `spectra-monthly` scheduled task does not inject it -- so
+the fetcher always hit the silent `if not api_key: return empty` path. 0 items since inception,
+confirmed never-worked (not a regression).
+
+Decision (Jeff, 2026-06-03): get a key and wire it (vs. disabling the source).
+
+Code wired this session (`src/collect/fetchers/congress_gov.py`): api-key resolution is now
+`config.api_key` -> env `CONGRESS_GOV_API_KEY` -> `keyring.get_password("spectra",
+"CONGRESS_GOV_API_KEY")`, with a safe `_keyring_api_key()` helper that returns "" on any
+failure (preserves graceful-empty behavior when no key). `keyring>=24.0` added to
+requirements.txt. Verified: no-key path still returns empty without crashing; full suite green
+(59 passed). The fetcher will return bills as soon as the key is stored -- no further code
+change needed.
+
+### Remaining (to close)
+1. Jeff: get a free key at https://api.congress.gov/sign-up/ (emailed, ~2 min).
+2. Store it via `/vault-new-secret` -> keyring service `spectra`, key `CONGRESS_GOV_API_KEY`.
+3. Verify: run the congress_gov fetcher; confirm items > 0 and `_health.json` shows congress_gov
+   with a non-zero count on the next (or a forced) run. Then flip this ticket to Delivered.
 
 ## References
 - Source collector: `src/` Congress.gov fetcher (`congress_gov`)

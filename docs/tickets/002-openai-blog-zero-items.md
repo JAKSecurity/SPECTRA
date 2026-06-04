@@ -1,6 +1,6 @@
 # 002: openai_blog source regressed to 0 items in 2026-06
-**Status**: Open  **Priority**: P2  **Type**: Bug
-**Created**: 2026-06-03
+**Status**: Delivered  **Priority**: P2  **Type**: Bug
+**Created**: 2026-06-03  **Resolved**: 2026-06-03
 
 ## Summary
 The `openai_blog` source (OpenAI Blog RSS fetcher) returned a healthy item count for two
@@ -29,6 +29,20 @@ while fixing it.)
 - [ ] Update the feed URL / parser as needed.
 - [ ] Confirm a subsequent (or forced) run reports openai_blog with items > 0 in `_health.json`.
 - [ ] Sanity-check the item count is reasonable for a blog feed (not the prior ~930).
+
+## Resolution (2026-06-03)
+Root cause: the configured feed URL `https://openai.com/blog/rss.xml` now **307-redirects**
+to `https://openai.com/news/rss.xml`. A run that did not follow the redirect returned 0 items.
+The feed itself is healthy (both URLs return ~989 entries today), so June's 0 was the
+redirect/transient failure, not a retired feed.
+
+Fix: pointed `openai_blog` at the canonical non-redirecting URL
+`https://openai.com/news/rss.xml` in `src/collect/config.yaml`.
+
+Verified: ran `RSSFetcher('openai_blog', cfg).fetch()` through SPECTRA's own code path ->
+**989 items** (was 0). Full suite green (59 passed). The high count is the full archive (same
+as the historical 934/929); downstream curation caps to top-20 per section by relevance, so no
+output flooding.
 
 ## References
 - Source collector: `src/` OpenAI blog fetcher (`openai_blog`)
