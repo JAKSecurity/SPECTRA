@@ -15,8 +15,10 @@
 
 | ID | Title | Status | Priority | Capability | Ticket |
 |----|-------|--------|----------|------------|--------|
+| 001 | congress_gov source returns 0 items (chronic since first run, 2026-04) | Open | P2 | C3 | Y |
+| 002 | openai_blog source regressed to 0 items in 2026-06 (was ~929) | Open | P2 | C3 | Y |
 
-_(No active items — monthly pipeline running unattended; future enhancements would open new tickets here.)_
+_Monthly pipeline running unattended. Two source collectors are returning 0 items (tickets 001/002) -- detection works (source-health warnings fire) but the feeds need repair._
 
 ## Historical detail (pre-canonicalization)
 
@@ -84,3 +86,8 @@ The original phase-by-phase checklist below preserves what was delivered in each
 
 ### Setup required
 - [x] Create Discord channel for SPECTRA and store webhook as DISCORD_SPECTRA_WEBHOOK in keyring
+
+## Links
+
+[001]: docs/tickets/001-congress-gov-zero-items.md
+[002]: docs/tickets/002-openai-blog-zero-items.md
