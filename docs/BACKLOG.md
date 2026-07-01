@@ -17,8 +17,10 @@
 |----|-------|--------|----------|------------|--------|
 | 001 | congress_gov source returns 0 items (chronic since first run, 2026-04) | Delivered | P2 | C3 | Y |
 | 002 | openai_blog source regressed to 0 items in 2026-06 (was ~929) | Delivered | P2 | C3 | Y |
+| 003 | cisa_alerts source returned 0 items in 2026-07 (regression; 30/mo Apr-Jun) | Open | P2 | C3 | Y |
+| 004 | congress_gov returns bills but keyword/date filters not applied (relevance) | Open | P2 | C3 | Y |
 
-_Monthly pipeline running unattended. Two source collectors are returning 0 items (tickets 001/002) -- detection works (source-health warnings fire) but the feeds need repair._
+_Monthly pipeline running unattended. Source-health detection works (warnings fire); open feed-repair tickets: 003 (cisa_alerts regressed to 0 items in 2026-07) and 004 (congress_gov returns non-cyber, out-of-window bills). Tickets 001/002 delivered._
 
 ## Historical detail (pre-canonicalization)
 
@@ -91,3 +93,5 @@ The original phase-by-phase checklist below preserves what was delivered in each
 
 [001]: docs/tickets/001-congress-gov-zero-items.md
 [002]: docs/tickets/002-openai-blog-zero-items.md
+[003]: docs/tickets/003-cisa-alerts-zero-items.md
+[004]: docs/tickets/004-congress-gov-keyword-filter.md
