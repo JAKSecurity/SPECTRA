@@ -2,7 +2,7 @@
 
 **Security Policy, Emerging Cyber Threats, Research & AI**
 
-SPECTRA is an AI-automated monthly cybersecurity policy digest. It collects from 17 public government and industry sources, uses Claude to categorize and summarize items, and renders a branded PDF report -- all in a single scheduled task run.
+SPECTRA is an AI-automated monthly cybersecurity policy digest. It collects from 17 public government and industry sources, uses Codex to categorize and summarize items, and renders a branded PDF report in a single scheduled run.
 
 Built for DoD/federal cybersecurity practitioners who need to stay current on policy, threats, and AI developments without manually scanning dozens of feeds.
 
@@ -36,14 +36,14 @@ All sources are public and unclassified. See `src/collect/config.yaml` for the f
 
 ![SPECTRA architecture](docs/diagrams/architecture.svg)
 
-The entire pipeline runs as a single [Claude Code](https://docs.anthropic.com/en/docs/claude-code) scheduled task. Claude reads the raw items, categorizes each into the appropriate section, writes a 2-3 sentence summary, scores relevance, consolidates duplicate stories, and assembles the markdown draft. No API key needed -- runs on the Claude Code subscription.
+The pipeline runs through the Codex `SPECTRA Monthly Report` automation. Codex reads the raw items, categorizes each into the appropriate section, writes a 2-3 sentence summary, scores relevance, consolidates duplicate stories, and assembles the markdown draft and PDF for review. External delivery remains a separate, approval-gated step.
 
 ## Setup
 
 ### Prerequisites
 
 - Python 3.10+
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (for the scheduled curation task)
+- Codex desktop (for scheduled curation and report review)
 
 ### Install
 
@@ -62,8 +62,7 @@ PYTHONPATH="." python -m src.collect.runner src/collect/config.yaml data/sources
 # 2. Prep (load + dedup)
 PYTHONPATH="." python -m src.curate.curate data/sources/2026-04 data/drafts/prepped_2026-04.json
 
-# 3. Curate -- this step requires Claude Code (scheduled task handles it)
-#    See the scheduled task SKILL.md for the full curation prompt
+# 3. Curate -- the Codex monthly automation handles model-backed curation
 
 # 4. Render to PDF
 PYTHONPATH="." python -m src.render.render data/drafts/2026-04-SPECTRA.md output/2026-04-SPECTRA.pdf
@@ -71,7 +70,7 @@ PYTHONPATH="." python -m src.render.render data/drafts/2026-04-SPECTRA.md output
 
 ### Automated Monthly Run
 
-The `spectra-monthly` Claude Code scheduled task runs the full pipeline at 5AM on the 1st of each month. It collects sources, curates with AI, presents the draft for review, renders the PDF, and delivers via email and Discord.
+The Codex `SPECTRA Monthly Report` automation runs at 5 AM on the first of each month. It collects the previous calendar month's sources, curates the report, renders the PDF, and presents the artifacts for review. Email and Discord delivery occur only after approval.
 
 ### Tests
 

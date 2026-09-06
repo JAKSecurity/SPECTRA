@@ -73,6 +73,24 @@ class TestFederalRegisterFetcher:
 
         assert len(result.items) == 0
 
+    def test_uses_explicit_content_window(self):
+        config = {
+            "search_term": "cybersecurity",
+            "start_date": "2026-03-01",
+            "end_date": "2026-04-01",
+        }
+        fetcher = FederalRegisterFetcher("federal_register", config)
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"results": []}
+        mock_resp.raise_for_status = MagicMock()
+
+        with patch("src.collect.fetchers.federal_register.requests.get", return_value=mock_resp) as mock_get:
+            fetcher.fetch()
+
+        params = mock_get.call_args.kwargs["params"]
+        assert params["conditions[publication_date][gte]"] == "2026-03-01"
+        assert params["conditions[publication_date][lt]"] == "2026-04-01"
+
     def test_generates_stable_ids(self):
         config = {"search_term": "cybersecurity", "category_hint": "policy"}
         fetcher = FederalRegisterFetcher("federal_register", config)

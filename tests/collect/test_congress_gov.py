@@ -112,6 +112,26 @@ class TestCongressGovFetcher:
 
         assert len(result.items) == 0
 
+    def test_filters_to_explicit_content_window(self):
+        config = {
+            "api_key": "test-key",
+            "search_term": "cybersecurity",
+            "start_date": "2026-04-01",
+            "end_date": "2026-05-01",
+        }
+        fetcher = CongressGovFetcher("congress_gov", config)
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = MOCK_CONGRESS_RESPONSE
+        mock_resp.status_code = 200
+
+        with patch("src.collect.fetchers.congress_gov.requests.get", return_value=mock_resp) as mock_get:
+            result = fetcher.fetch()
+
+        assert [item.published for item in result.items] == ["2026-04-01"]
+        params = mock_get.call_args.kwargs["params"]
+        assert params["fromDateTime"] == "2026-04-01T00:00:00Z"
+        assert params["toDateTime"] == "2026-05-01T00:00:00Z"
+
     def test_error_response_does_not_leak_api_key(self):
         # Security: an HTTP error must NOT surface the api_key. raise_for_status()
         # would embed the request URL (with ?api_key=...) in the exception; the

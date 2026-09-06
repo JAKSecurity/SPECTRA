@@ -115,3 +115,19 @@ class TestCISAKEVFetcher:
             result = fetcher.fetch()
 
         assert len(result.items) == 0
+
+    def test_filters_to_explicit_content_window(self):
+        config = {
+            "start_date": "2026-01-01",
+            "end_date": "2026-01-02",
+            "category_hint": "threats",
+        }
+        fetcher = CISAKEVFetcher("cisa_kev", config)
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = MOCK_KEV_RESPONSE
+        mock_resp.raise_for_status = MagicMock()
+
+        with patch("src.collect.fetchers.cisa_kev.requests.get", return_value=mock_resp):
+            result = fetcher.fetch()
+
+        assert result.items == []

@@ -10,7 +10,7 @@ AI-generated monthly cybersecurity policy digest for DoD/federal practitioners.
 ## Pipeline
 
 ```
-1. spectra-monthly task        -> collect, prep, curate, draft, render (single monthly run)
+1. SPECTRA Monthly Report      -> collect, prep, curate, draft, render (Codex automation)
 2. [Human reviews draft + PDF in-session]
 ```
 
@@ -18,14 +18,14 @@ AI-generated monthly cybersecurity policy digest for DoD/federal practitioners.
 
 1. **Collect**: RSS fetchers pull from configured sources into JSON files
 2. **Prep**: Load + deduplicate collected items into a single prepped JSON
-3. **Curate** (scheduled task): Claude categorizes items into SPECTRA sections, writes summaries, produces curated JSON and markdown draft. Runs via Claude Code subscription (no API key needed).
+3. **Curate** (scheduled task): Codex categorizes items into SPECTRA sections, writes summaries, and produces curated JSON and a markdown draft.
 4. **Review**: Human reviews markdown draft before rendering
 5. **Render** (on demand): Approved markdown -> PDF via reportlab
 6. **Deliver**: Email (PDF attached) + Discord (#spectra-reports)
 
 ## Schedule
 
-- **5AM on 1st of each month**: spectra-monthly scheduled task runs full pipeline
+- **5 AM on 1st of each month**: the Codex `SPECTRA Monthly Report` automation produces review artifacts
 - **Last day of month**: Morning briefing note -- "SPECTRA report coming tomorrow"
 - **1st of month**: Morning briefing note -- completion status or error flag
 
@@ -43,7 +43,7 @@ AI-generated monthly cybersecurity policy digest for DoD/federal practitioners.
 
 - Python 3, feedparser, requests, reportlab
 - Configuration: `src/collect/config.yaml`
-- Scheduling: Claude Code scheduled tasks (spectra-monthly)
+- Scheduling: Codex recurring automation (`SPECTRA Monthly Report`)
 - Delivery: Gmail SMTP + Discord webhook
 
 ## Project Structure

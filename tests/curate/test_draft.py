@@ -13,10 +13,38 @@ class TestAssembleDraft:
         assert "monthly digest" in md
         assert "DoD and federal practitioners" in md
 
+    def test_normalizes_ai_style_punctuation(self):
+        items = [{
+            "id": "a",
+            "title": "Agency’s \u201cnew\u201d rule",
+            "url": "https://example.com",
+            "source": "test",
+            "section": "policy",
+            "summary": "A first clause \u2014 and a second clause.",
+            "relevance": 8,
+        }]
+        md = assemble_draft(items, month_label="APRIL 2026")
+        assert "\u2014" not in md
+        assert "\u2018" not in md and "\u2019" not in md
+        assert "\u201c" not in md and "\u201d" not in md
+
     def test_includes_executive_summary(self, sample_curated_items):
         md = assemble_draft(sample_curated_items, month_label="APRIL 2026")
         assert "## Executive Summary" in md
         assert "CISA Releases Emergency Directive" in md
+
+    def test_executive_summary_preserves_dotted_abbreviations(self):
+        items = [{
+            "id": "a",
+            "title": "Power security",
+            "url": "https://example.com",
+            "source": "test",
+            "section": "policy",
+            "summary": "The U.S. bulk-power system changed. Agencies must review equipment.",
+            "relevance": 10,
+        }]
+        md = assemble_draft(items, month_label="APRIL 2026")
+        assert "The U.S. bulk-power system changed." in md
 
     def test_groups_items_by_section(self, sample_curated_items):
         md = assemble_draft(sample_curated_items, month_label="APRIL 2026")

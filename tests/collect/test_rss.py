@@ -45,6 +45,21 @@ class TestRSSFetcher:
 
         assert result.items[0].category_hint == "news"
 
+    def test_filters_to_explicit_content_window(self, sample_rss_xml):
+        config = {
+            "url": "https://example.com/feed.xml",
+            "start_date": "2026-04-05",
+            "end_date": "2026-04-07",
+        }
+        fetcher = RSSFetcher("test_feed", config)
+
+        with patch("src.collect.fetchers.rss.feedparser.parse") as mock_parse:
+            import feedparser
+            mock_parse.return_value = feedparser.parse(sample_rss_xml)
+            result = fetcher.fetch()
+
+        assert [item.published for item in result.items] == ["2026-04-06"]
+
     def test_fetch_handles_empty_feed(self):
         empty_rss = '<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>'
         config = {"url": "https://example.com/empty.xml", "category_hint": "policy"}

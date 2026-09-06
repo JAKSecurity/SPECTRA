@@ -11,7 +11,10 @@ class CISAKEVFetcher(BaseFetcher):
         days_back = self.config.get("days_back", 30)
         category_hint = self.config.get("category_hint", "threats")
 
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%d")
+        cutoff = self.config.get("start_date") or (
+            datetime.now(timezone.utc) - timedelta(days=days_back)
+        ).strftime("%Y-%m-%d")
+        end_date = self.config.get("end_date")
 
         resp = requests.get(
             "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
@@ -24,6 +27,8 @@ class CISAKEVFetcher(BaseFetcher):
         for vuln in data.get("vulnerabilities", []):
             date_added = vuln.get("dateAdded", "")
             if date_added < cutoff:
+                continue
+            if end_date and date_added >= end_date:
                 continue
 
             cve_id = vuln.get("cveID", "")

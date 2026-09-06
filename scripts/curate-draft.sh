@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # scripts/curate-draft.sh — Stage 2c: Assemble markdown draft from curated JSON
-# Usage: scripts/curate-draft.sh [curated_json] [month_label]
+# Usage: scripts/curate-draft.sh [curated_json] [month_label] [draft_md]
 # Example: scripts/curate-draft.sh data/drafts/curated_2026-04.json "APRIL 2026"
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -25,13 +25,21 @@ if [ ! -f "$CURATED_JSON" ]; then
     exit 1
 fi
 
-DRAFT_MD="data/drafts/$(date -u +%Y-%m)-SPECTRA.md"
+CURATED_BASENAME="$(basename "$CURATED_JSON")"
+REPORT_MONTH="${CURATED_BASENAME#curated_}"
+REPORT_MONTH="${REPORT_MONTH%.json}"
+DRAFT_MD="${3:-data/drafts/$REPORT_MONTH-SPECTRA.md}"
 
 echo "SPECTRA Draft — Stage 2c"
 echo "  Curated JSON: $CURATED_JSON"
 echo "  Month: $MONTH_LABEL"
 
-PYTHONPATH="$PROJECT_DIR" python -c "
+PYTHON_BIN="$PROJECT_DIR/.venv/bin/python"
+if [ ! -x "$PYTHON_BIN" ]; then
+    PYTHON_BIN="python3"
+fi
+
+PYTHONPATH="$PROJECT_DIR" "$PYTHON_BIN" -c "
 import json
 from src.curate.draft import assemble_draft
 

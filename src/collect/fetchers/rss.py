@@ -42,6 +42,13 @@ class RSSFetcher(BaseFetcher):
             if hasattr(entry, "published_parsed") and entry.published_parsed:
                 published = datetime(*entry.published_parsed[:6]).strftime("%Y-%m-%d")
 
+            start_date = self.config.get("start_date")
+            end_date = self.config.get("end_date")
+            if start_date and (not published or published < start_date):
+                continue
+            if end_date and (not published or published >= end_date):
+                continue
+
             items.append(
                 FetchedItem(
                     id=item_id,

@@ -22,6 +22,21 @@ SECTION_TITLES = {
 MAX_ITEMS_PER_SECTION = 20
 
 
+def _first_sentence(text: str) -> str:
+    """Extract a sentence without splitting common dotted abbreviations."""
+    protected = text
+    replacements = {
+        "U.S.": "U<dot>S<dot>",
+        "U.K.": "U<dot>K<dot>",
+        "e.g.": "e<dot>g<dot>",
+        "i.e.": "i<dot>e<dot>",
+    }
+    for original, placeholder in replacements.items():
+        protected = protected.replace(original, placeholder)
+    first = protected.split(". ", 1)[0].replace("<dot>", ".")
+    return first if first.endswith(".") else first + "."
+
+
 def _fix_encoding(text: str) -> str:
     """Fix common UTF-8 mojibake artifacts (e.g., em-dash encoded as â€")."""
     replacements = {
@@ -32,6 +47,11 @@ def _fix_encoding(text: str) -> str:
         "\u00e2\u20ac\u009d": "\u201d",  # right double quote
         "\u00e2\u20ac\u00a6": "\u2026",  # ellipsis
         "\u00c2\u00a0": " ",             # non-breaking space
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u201c": '"',
+        "\u201d": '"',
+        "\u2014": "-",
     }
     for bad, good in replacements.items():
         text = text.replace(bad, good)
@@ -51,7 +71,7 @@ def assemble_draft(curated_items: list, month_label: str = None) -> str:
     lines = []
 
     # Title
-    lines.append(f"# SPECTRA \u2014 {month_label}")
+    lines.append(f"# SPECTRA - {month_label}")
     lines.append("")
     lines.append("**Security Policy, Emerging Cyber Threats, Research & AI**")
     lines.append("")
@@ -67,9 +87,9 @@ def assemble_draft(curated_items: list, month_label: str = None) -> str:
     lines.append("## Executive Summary")
     lines.append("")
     for item in all_sorted[:5]:
-        first_sentence = _fix_encoding(item["summary"]).split(".")[0] + "."
+        first_sentence = _first_sentence(_fix_encoding(item["summary"]))
         title = _fix_encoding(item["title"])
-        lines.append(f"- **{title}** \u2014 {first_sentence}")
+        lines.append(f"- **{title}** - {first_sentence}")
     lines.append("")
     lines.append("---")
     lines.append("")

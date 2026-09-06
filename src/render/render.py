@@ -1,5 +1,7 @@
 import re
 import sys
+from html import escape
+from pathlib import Path
 
 from reportlab.lib.colors import HexColor, white
 from reportlab.lib.pagesizes import letter
@@ -240,6 +242,31 @@ def _build_styles():
             leading=14,
             textColor=DARK_TEXT,
         ),
+        "conference_item_title": ParagraphStyle(
+            "SPConferenceItemTitle",
+            parent=styles["Heading2"],
+            fontSize=9,
+            leading=11,
+            spaceBefore=6,
+            spaceAfter=1,
+            textColor=DARK_TEXT,
+        ),
+        "conference_source": ParagraphStyle(
+            "SPConferenceSource",
+            parent=styles["Normal"],
+            fontSize=7,
+            leading=8,
+            textColor=LINK_COLOR,
+            spaceAfter=2,
+        ),
+        "conference_body": ParagraphStyle(
+            "SPConferenceBody",
+            parent=styles["Normal"],
+            fontSize=8.5,
+            leading=10.5,
+            spaceAfter=4,
+            textColor=DARK_TEXT,
+        ),
         "bullet": ParagraphStyle(
             "SPBullet",
             parent=styles["Normal"],
@@ -263,7 +290,7 @@ def _page_footer(canvas, doc):
     # Left: SPECTRA branding
     canvas.setFont("Helvetica", 7)
     canvas.setFillColor(MUTED)
-    canvas.drawString(0.75 * inch, 0.4 * inch, "SPECTRA \u2014 Security Policy, Emerging Cyber Threats, Research & AI")
+    canvas.drawString(0.75 * inch, 0.4 * inch, "SPECTRA - Security Policy, Emerging Cyber Threats, Research & AI")
     # Right: page number
     canvas.drawRightString(page_width - 0.75 * inch, 0.4 * inch, f"Page {doc.page}")
     canvas.restoreState()
@@ -271,6 +298,7 @@ def _page_footer(canvas, doc):
 
 def render_pdf(md_text: str, output_path: str) -> str:
     """Render SPECTRA markdown to a PDF file."""
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     parsed = parse_markdown(md_text)
     st = _build_styles()
 
@@ -304,6 +332,10 @@ def render_pdf(md_text: str, output_path: str) -> str:
         section_title = section["title"]
         section_color = SECTION_COLORS.get(section_title, NAVY)
 
+        # Conferences are a reference section and read better as a clean final page.
+        if section_title == "Upcoming Conferences":
+            story.append(PageBreak())
+
         # Section heading — colored bar with white text
         story.append(SectionHeadingFlowable(content_width, section_title, section_color))
         story.append(Spacer(1, 8))
@@ -313,25 +345,41 @@ def render_pdf(md_text: str, output_path: str) -> str:
                 text = _clean_for_reportlab(item["bullet"])
                 story.append(Paragraph(text, st["bullet"]))
             else:
+                title_style = (
+                    st["conference_item_title"]
+                    if section_title == "Upcoming Conferences"
+                    else st["item_title"]
+                )
+                source_style = (
+                    st["conference_source"]
+                    if section_title == "Upcoming Conferences"
+                    else st["source"]
+                )
+                body_style = (
+                    st["conference_body"]
+                    if section_title == "Upcoming Conferences"
+                    else st["body"]
+                )
                 story.append(
                     Paragraph(
-                        _clean_for_reportlab(item["title"]), st["item_title"]
+                        _clean_for_reportlab(item["title"]), title_style
                     )
                 )
                 if item.get("source_url"):
-                    source_text = f'<link href="{item["source_url"]}">{_clean_for_reportlab(item["source_line"])} \u2014 {_clean_for_reportlab(item["source_url"])}</link>'
-                    story.append(Paragraph(source_text, st["source"]))
+                    source_url = escape(item["source_url"], quote=True)
+                    source_text = f'<link href="{source_url}">{_clean_for_reportlab(item["source_line"])} - {_clean_for_reportlab(item["source_url"])}</link>'
+                    story.append(Paragraph(source_text, source_style))
                 elif item.get("source_line"):
                     story.append(
                         Paragraph(
                             _clean_for_reportlab(item["source_line"]),
-                            st["source"],
+                            source_style,
                         )
                     )
                 if item.get("summary"):
                     story.append(
                         Paragraph(
-                            _clean_for_reportlab(item["summary"]), st["body"]
+                            _clean_for_reportlab(item["summary"]), body_style
                         )
                     )
 

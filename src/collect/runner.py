@@ -1,7 +1,7 @@
+import argparse
 import json
 import os
-import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import yaml
 
@@ -13,12 +13,27 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-def run_collect(config_path: str, output_base: str = "data/sources") -> list:
+def report_window(report_month: str) -> tuple[str, str]:
+    """Return the previous calendar month's inclusive/exclusive date window."""
+    report_year, report_month_number = map(int, report_month.split("-"))
+    report_start = date(report_year, report_month_number, 1)
+    if report_month_number == 1:
+        content_start = date(report_year - 1, 12, 1)
+    else:
+        content_start = date(report_year, report_month_number - 1, 1)
+    return content_start.isoformat(), report_start.isoformat()
+
+
+def run_collect(
+    config_path: str,
+    output_base: str = "data/sources",
+    report_month: str | None = None,
+) -> list:
     """Run all enabled fetchers and write JSON output."""
     config = load_config(config_path)
-    month_dir = os.path.join(
-        output_base, datetime.now(timezone.utc).strftime("%Y-%m")
-    )
+    report_month = report_month or datetime.now(timezone.utc).strftime("%Y-%m")
+    start_date, end_date = report_window(report_month)
+    month_dir = os.path.join(output_base, report_month)
     os.makedirs(month_dir, exist_ok=True)
 
     results = []
@@ -26,7 +41,10 @@ def run_collect(config_path: str, output_base: str = "data/sources") -> list:
         if not source_config.get("enabled", True):
             continue
         try:
-            fetcher = get_fetcher(name, source_config)
+            windowed_config = dict(source_config)
+            windowed_config["start_date"] = start_date
+            windowed_config["end_date"] = end_date
+            fetcher = get_fetcher(name, windowed_config)
             result = fetcher.fetch()
             filepath = fetcher.save(result, month_dir)
             results.append(
@@ -41,12 +59,18 @@ def run_collect(config_path: str, output_base: str = "data/sources") -> list:
             results.append({"source": name, "status": "error", "error": str(e)})
 
     # Write health report
-    _write_health_report(results, month_dir)
+    _write_health_report(results, month_dir, report_month, start_date, end_date)
 
     return results
 
 
-def _write_health_report(results: list, month_dir: str):
+def _write_health_report(
+    results: list,
+    month_dir: str,
+    report_month: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
     """Save a health report JSON summarizing source fetch results."""
     ok = [r for r in results if r["status"] == "ok"]
     errors = [r for r in results if r["status"] == "error"]
@@ -54,6 +78,8 @@ def _write_health_report(results: list, month_dir: str):
 
     report = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "report_month": report_month,
+        "content_window": {"start": start_date, "end_exclusive": end_date},
         "summary": {
             "total_sources": len(results),
             "succeeded": len(ok),
@@ -82,11 +108,20 @@ def _write_health_report(results: list, month_dir: str):
 
 
 def main():
-    config_path = sys.argv[1] if len(sys.argv) > 1 else "src/collect/config.yaml"
-    output_base = sys.argv[2] if len(sys.argv) > 2 else "data/sources"
+    parser = argparse.ArgumentParser(description="Collect SPECTRA source material")
+    parser.add_argument("config_path", nargs="?", default="src/collect/config.yaml")
+    parser.add_argument("output_base", nargs="?", default="data/sources")
+    parser.add_argument(
+        "--report-month",
+        help="Issue month in YYYY-MM form; source window is the previous calendar month",
+    )
+    args = parser.parse_args()
 
-    print(f"SPECTRA Collect \u2014 fetching sources from {config_path}")
-    results = run_collect(config_path, output_base)
+    report_month = args.report_month or datetime.now(timezone.utc).strftime("%Y-%m")
+    start_date, end_date = report_window(report_month)
+    print(f"SPECTRA Collect - report {report_month}, content {start_date} through {end_date} (exclusive)")
+    print(f"Fetching sources from {args.config_path}")
+    results = run_collect(args.config_path, args.output_base, report_month=report_month)
 
     for r in results:
         if r["status"] == "ok":

@@ -48,7 +48,13 @@ class CongressGovFetcher(BaseFetcher):
                 items=[],
             )
 
-        since = (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%dT00:00:00Z")
+        start_date = self.config.get("start_date")
+        end_date = self.config.get("end_date")
+        since = (
+            f"{start_date}T00:00:00Z"
+            if start_date
+            else (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%dT00:00:00Z")
+        )
 
         # Pass the key as a header, NOT a query param: requests embeds the full
         # URL (query string included) in ConnectionError/Timeout/HTTPError messages,
@@ -61,6 +67,7 @@ class CongressGovFetcher(BaseFetcher):
                 "sort": "updateDate+desc",
                 "limit": 20,
                 "fromDateTime": since,
+                **({"toDateTime": f"{end_date}T00:00:00Z"} if end_date else {}),
             },
             headers={"X-Api-Key": api_key},
             timeout=30,
@@ -85,6 +92,10 @@ class CongressGovFetcher(BaseFetcher):
             latest_action = bill.get("latestAction", {})
             action_text = latest_action.get("text", "")
             action_date = latest_action.get("actionDate", "")
+            if start_date and action_date < start_date:
+                continue
+            if end_date and action_date >= end_date:
+                continue
             summary = f"{bill_type} {number}: {title}"
             if action_text:
                 summary += f" Latest action ({action_date}): {action_text}"

@@ -11,7 +11,7 @@ Status: Implemented (Phases 1-4 complete)
 
 SPECTRA is an AI-generated monthly cybersecurity policy digest covering NIST updates, federal regulations, executive orders, CISA directives, AI/agentic developments, and industry news relevant to DoD/federal cybersecurity practitioners.
 
-The entire pipeline -- from source collection through AI curation to PDF rendering and delivery -- runs autonomously via a Claude Code scheduled task. No API keys or per-token billing required.
+Source collection through PDF rendering runs through a Codex recurring automation. External delivery remains approval-gated.
 
 ### Constraints
 
@@ -95,7 +95,7 @@ These sources were evaluated during Phase 2 and deliberately excluded:
 | DISA STIGs | Quarterly; blocks automated access |
 | Anthropic Blog | No public RSS feed |
 | SC Media | Cloudflare-blocked |
-| Conference scrapers | Claude's knowledge supplements in scheduled task |
+| Conference scrapers | Current web research supplements the scheduled run |
 
 ### Exclusions (by policy)
 
@@ -108,12 +108,12 @@ These sources were evaluated during Phase 2 and deliberately excluded:
 
 ## Pipeline Architecture
 
-Single monthly pipeline. All stages run in one scheduled task session on the 1st of each month at 5AM. The operator reviews the draft in-session before render and delivery.
+One monthly Codex automation starts on the first of each month at 5 AM. It produces the curated data, markdown draft, and PDF. The operator reviews the artifacts before delivery.
 
 ### Stages
 
 ```
-spectra-curate scheduled task (5AM, 1st of month)
+SPECTRA Monthly Report automation (5 AM, 1st of month)
   |
   +--> Collect (17 sources)     --> data/sources/YYYY-MM/*.json + _health.json
   +--> Prep (load + dedup)      --> data/drafts/prepped_YYYY-MM.json
@@ -246,9 +246,9 @@ SPECTRA/
 - **PDF generation:** reportlab
 - **Configuration:** YAML (PyYAML)
 - **Testing:** pytest (59 tests)
-- **AI curation:** Claude Code scheduled task (subscription -- no API key or per-token billing)
+- **AI curation:** Codex recurring automation
 - **Delivery:** Gmail SMTP (email with attachments), Discord webhooks
-- **Scheduling:** Claude Code scheduled tasks (cron: 5AM on 1st of month)
+- **Scheduling:** Codex recurring automation (5 AM on the first of each month)
 
 ---
 

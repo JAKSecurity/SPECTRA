@@ -13,13 +13,17 @@ class FederalRegisterFetcher(BaseFetcher):
         days_back = self.config.get("days_back", 30)
         category_hint = self.config.get("category_hint", "policy")
 
-        since = (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%d")
+        since = self.config.get("start_date") or (
+            datetime.now(timezone.utc) - timedelta(days=days_back)
+        ).strftime("%Y-%m-%d")
+        before = self.config.get("end_date")
 
         resp = requests.get(
             "https://www.federalregister.gov/api/v1/documents.json",
             params={
                 "conditions[term]": search_term,
                 "conditions[publication_date][gte]": since,
+                **({"conditions[publication_date][lt]": before} if before else {}),
                 "per_page": 50,
                 "order": "newest",
                 "fields[]": ["title", "abstract", "html_url", "publication_date", "document_number", "type"],

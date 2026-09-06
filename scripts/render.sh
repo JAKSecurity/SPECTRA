@@ -26,4 +26,9 @@ if [ ! -f "$DRAFT_MD" ]; then
     exit 1
 fi
 
-PYTHONPATH="$PROJECT_DIR" python -m src.render.render "$DRAFT_MD" "$OUTPUT_PDF"
+PYTHON_BIN="$PROJECT_DIR/.venv/bin/python"
+if [ ! -x "$PYTHON_BIN" ]; then
+    PYTHON_BIN="python3"
+fi
+
+PYTHONPATH="$PROJECT_DIR" "$PYTHON_BIN" -m src.render.render "$DRAFT_MD" "$OUTPUT_PDF"

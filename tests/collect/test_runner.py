@@ -4,7 +4,12 @@ from unittest.mock import patch, MagicMock
 
 import yaml
 
-from src.collect.runner import load_config, run_collect
+from src.collect.runner import load_config, report_window, run_collect
+
+
+def test_report_window_uses_previous_calendar_month():
+    assert report_window("2026-09") == ("2026-08-01", "2026-09-01")
+    assert report_window("2026-01") == ("2025-12-01", "2026-01-01")
 
 
 class TestLoadConfig:
@@ -67,6 +72,35 @@ class TestRunCollect:
         # 2 source JSON files + _health.json
         assert len(json_files) == 3
         assert "_health.json" in json_files
+
+    def test_report_month_controls_directory_window_and_health(self, tmp_path, sample_rss_xml):
+        config_path = tmp_path / "config.yaml"
+        config_data = {
+            "sources": {
+                "feed_a": {
+                    "type": "rss",
+                    "url": "https://example.com/a",
+                    "enabled": True,
+                }
+            }
+        }
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        output_dir = str(tmp_path / "output")
+        with patch("src.collect.fetchers.rss.feedparser.parse") as mock_parse:
+            import feedparser
+            mock_parse.return_value = feedparser.parse(sample_rss_xml)
+            run_collect(str(config_path), output_dir, report_month="2026-05")
+
+        month_dir = tmp_path / "output" / "2026-05"
+        assert month_dir.is_dir()
+        health = json.loads((month_dir / "_health.json").read_text())
+        assert health["report_month"] == "2026-05"
+        assert health["content_window"] == {
+            "start": "2026-04-01",
+            "end_exclusive": "2026-05-01",
+        }
 
     def test_skips_disabled_fetchers(self, tmp_path, sample_rss_xml):
         config_path = tmp_path / "config.yaml"

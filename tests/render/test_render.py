@@ -95,3 +95,8 @@ class TestRenderPdf:
         with open(output_path, "rb") as f:
             header = f.read(5)
         assert header == b"%PDF-"
+
+    def test_creates_missing_output_directory(self, tmp_path):
+        output_path = tmp_path / "nested" / "test_output.pdf"
+        render_pdf(SAMPLE_MARKDOWN, str(output_path))
+        assert output_path.exists()
