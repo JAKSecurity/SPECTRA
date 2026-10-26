@@ -18,7 +18,7 @@ MOCK_CONGRESS_RESPONSE = {
         },
         {
             "number": "567",
-            "title": "Securing Critical Infrastructure Act",
+            "title": "Cybersecurity and Critical Infrastructure Act",
             "type": "S",
             "congress": 119,
             "latestAction": {
@@ -57,7 +57,7 @@ class TestCongressGovFetcher:
         assert len(result.items) == 0
 
     def test_fetches_bills_with_api_key(self):
-        config = {"api_key": "test-key", "search_term": "cybersecurity", "category_hint": "legislative"}
+        config = {"api_key": "test-key", "search_term": "cybersecurity", "category_hint": "legislative", "start_date": "2026-03-01", "end_date": "2026-05-01"}
         fetcher = CongressGovFetcher("congress_gov", config)
 
         mock_resp = MagicMock()
@@ -73,7 +73,7 @@ class TestCongressGovFetcher:
         assert "house-bill/1234" in result.items[0].url
 
     def test_senate_bill_url(self):
-        config = {"api_key": "test-key", "search_term": "cybersecurity", "category_hint": "legislative"}
+        config = {"api_key": "test-key", "search_term": "cybersecurity", "category_hint": "legislative", "start_date": "2026-03-01", "end_date": "2026-05-01"}
         fetcher = CongressGovFetcher("congress_gov", config)
 
         mock_resp = MagicMock()
@@ -86,7 +86,7 @@ class TestCongressGovFetcher:
         assert "senate-bill/567" in result.items[1].url
 
     def test_includes_latest_action_in_summary(self):
-        config = {"api_key": "test-key", "search_term": "cybersecurity", "category_hint": "legislative"}
+        config = {"api_key": "test-key", "search_term": "cybersecurity", "category_hint": "legislative", "start_date": "2026-03-01", "end_date": "2026-05-01"}
         fetcher = CongressGovFetcher("congress_gov", config)
 
         mock_resp = MagicMock()
@@ -100,7 +100,7 @@ class TestCongressGovFetcher:
         assert "2026-04-01" in result.items[0].summary
 
     def test_handles_empty_results(self):
-        config = {"api_key": "test-key", "search_term": "cybersecurity", "category_hint": "legislative"}
+        config = {"api_key": "test-key", "search_term": "cybersecurity", "category_hint": "legislative", "start_date": "2026-03-01", "end_date": "2026-05-01"}
         fetcher = CongressGovFetcher("congress_gov", config)
 
         mock_resp = MagicMock()

@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import time
 from datetime import date, datetime, timezone
 
 import yaml
@@ -45,7 +46,17 @@ def run_collect(
             windowed_config["start_date"] = start_date
             windowed_config["end_date"] = end_date
             fetcher = get_fetcher(name, windowed_config)
-            result = fetcher.fetch()
+            # Core sources get one fresh attempt before an empty/error is persisted.
+            # WHY: a transient CISA feed failure must not erase a monthly source (003).
+            for attempt in range(2 if source_config.get("core", False) else 1):
+                try:
+                    result = fetcher.fetch()
+                    if result.items or attempt == 1 or not source_config.get("core", False):
+                        break
+                except Exception:
+                    if attempt == 1 or not source_config.get("core", False):
+                        raise
+                time.sleep(1)
             filepath = fetcher.save(result, month_dir)
             results.append(
                 {

@@ -1,0 +1,49 @@
+{
+  "bills": [
+    {
+      "congress": 119,
+      "type": "HR",
+      "number": "4",
+      "title": "Cyber Security Act",
+      "updateDate": "2026-10-25",
+      "latestAction": {
+        "actionDate": "2026-10-31",
+        "text": "Referred to committee."
+      }
+    },
+    {
+      "congress": 119,
+      "type": "HR",
+      "number": "5",
+      "title": "Cybersecurity Act",
+      "updateDate": "2026-10-25",
+      "latestAction": {
+        "actionDate": "2026-11-01",
+        "text": "Referred to committee."
+      }
+    },
+    {
+      "congress": 119,
+      "type": "HR",
+      "number": "6",
+      "title": "Cybersecurity Act",
+      "updateDate": "2026-10-25",
+      "latestAction": {
+        "actionDate": "",
+        "text": "Referred to committee."
+      }
+    },
+    {
+      "congress": 119,
+      "type": "HR",
+      "number": "7",
+      "title": "Federal Systems Act",
+      "updateDate": "2026-10-25",
+      "latestAction": {
+        "actionDate": "2026-10-20",
+        "text": "Committee on CYBERSECURITY discharged."
+      }
+    }
+  ],
+  "pagination": {}
+}

@@ -37,7 +37,15 @@ class CongressGovFetcher(BaseFetcher):
             or os.environ.get("CONGRESS_GOV_API_KEY", "")
             or _keyring_api_key()
         )
-        search_term = self.config.get("search_term", "cybersecurity")
+        terms = self.config.get("search_terms", self.config.get("search_term", "cybersecurity"))
+        if isinstance(terms, str):  # Backward-compatible with existing source configs.
+            terms = [terms]
+        terms = [term.strip().casefold() for term in terms if term.strip()]
+        if not terms:
+            raise ValueError("congress_gov requires at least one search term")
+        max_pages = int(self.config.get("max_pages", 40))
+        if not 1 <= max_pages <= 40:
+            raise ValueError("congress_gov max_pages must be between 1 and 40")
         days_back = self.config.get("days_back", 30)
         category_hint = self.config.get("category_hint", "legislative")
 
@@ -48,40 +56,45 @@ class CongressGovFetcher(BaseFetcher):
                 items=[],
             )
 
-        start_date = self.config.get("start_date")
-        end_date = self.config.get("end_date")
-        since = (
-            f"{start_date}T00:00:00Z"
-            if start_date
-            else (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%dT00:00:00Z")
-        )
+        now = datetime.now(timezone.utc)
+        start_date = self.config.get("start_date") or (now - timedelta(days=days_back)).date().isoformat()
+        end_date = self.config.get("end_date") or (now + timedelta(days=1)).date().isoformat()
 
-        # Pass the key as a header, NOT a query param: requests embeds the full
-        # URL (query string included) in ConnectionError/Timeout/HTTPError messages,
-        # which would leak the api_key into tracebacks/logs. A header keeps it out
-        # of every URL-based error path. Ticket 001.
-        resp = requests.get(
-            "https://api.congress.gov/v3/bill",
-            params={
-                "query": search_term,
-                "sort": "updateDate+desc",
-                "limit": 20,
-                "fromDateTime": since,
-                **({"toDateTime": f"{end_date}T00:00:00Z"} if end_date else {}),
-            },
-            headers={"X-Api-Key": api_key},
-            timeout=30,
-        )
-        # Do NOT use resp.raise_for_status(): the request URL carries api_key as a
-        # query param, and raise_for_status() embeds the full URL (with the key) in
-        # the exception message -- leaking the secret into tracebacks/logs. Raise a
-        # scrubbed error instead. Ticket 001.
-        if resp.status_code != 200:
-            raise RuntimeError(f"congress_gov API error: HTTP {resp.status_code}")
-        data = resp.json()
+        # WHY: /bill has no keyword query parameter, and its date parameters filter
+        # updates, not legislative action dates. Filter relevance/actions locally (004).
+        # https://api.congress.gov/ and LibraryOfCongress/api.congress.gov Documentation/BillEndpoint.md
+        bills = []
+        seen = set()
+        for page in range(max_pages):
+            resp = requests.get(
+                "https://api.congress.gov/v3/bill",
+                params={
+                    "format": "json",
+                    "limit": 250,
+                    "offset": page * 250,
+                    "fromDateTime": f"{start_date}T00:00:00Z",
+                    "toDateTime": f"{end_date}T00:00:00Z",
+                },
+                headers={"X-Api-Key": api_key},
+                timeout=30,
+            )
+            if resp.status_code != 200:
+                raise RuntimeError(f"congress_gov API error: HTTP {resp.status_code}")
+            data = resp.json()
+            for bill in data.get("bills", []):
+                identity = (bill.get("congress"), bill.get("type"), bill.get("number"))
+                if identity not in seen:
+                    seen.add(identity)
+                    bills.append(bill)
+            # Do not follow the supplied URL: it can contain an API key. Build our
+            # own offsets with header authentication and exhaust the update window.
+            if not data.get("pagination", {}).get("next"):
+                break
+        else:
+            raise RuntimeError("congress_gov page limit reached; report window incomplete")
 
         items = []
-        for bill in data.get("bills", []):
+        for bill in bills:
             bill_type = bill.get("type", "HR")
             number = str(bill.get("number", ""))
             congress = bill.get("congress", 119)
@@ -92,9 +105,15 @@ class CongressGovFetcher(BaseFetcher):
             latest_action = bill.get("latestAction", {})
             action_text = latest_action.get("text", "")
             action_date = latest_action.get("actionDate", "")
-            if start_date and action_date < start_date:
+            if not any(term in f"{title} {action_text}".casefold() for term in terms):
                 continue
-            if end_date and action_date >= end_date:
+            try:
+                datetime.strptime(action_date, "%Y-%m-%d")
+            except (ValueError, TypeError):
+                continue
+            if action_date < start_date:
+                continue
+            if action_date >= end_date:
                 continue
             summary = f"{bill_type} {number}: {title}"
             if action_text:
