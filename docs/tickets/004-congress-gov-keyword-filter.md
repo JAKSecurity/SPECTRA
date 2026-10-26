@@ -101,3 +101,12 @@ resolutions require their corresponding resolution URL path. This pre-existing
 link defect is outside the two source-filter fixes and should receive a separate
 BACKLOG item in the designated allocator checkout. This packet does not mint
 IDs or edit BACKLOG.
+
+## Live verification blocked (2026-10-26)
+
+`scripts/check-source-window.py --report-month 2026-11` reports
+"congress_gov: unavailable (no readable key)" outside any sandbox. SPECTRA's
+`.venv` does not have the `keyring` package installed (it is in
+`requirements.txt`), and no `CONGRESS_GOV_API_KEY` entry was visible in the
+workstation keyring. Until the key is provisioned on the workstation, the
+monthly run gets nothing from this source. Ticket stays open.
