@@ -1,5 +1,5 @@
 # 003: cisa_alerts source returned 0 items in 2026-07 (regression)
-**Status**: Open  **Priority**: P2  **Type**: Bug
+**Status**: Delivered  **Priority**: P2  **Type**: Bug
 **Created**: 2026-07-01
 
 ## Summary
@@ -32,12 +32,12 @@ almost identical pattern (OpenAI feed 307-redirect not followed); check for the 
 issue here first.
 
 ## Acceptance Criteria
-- [ ] Root-cause the July regression: run the `cisa_alerts` fetcher in isolation; confirm the
+- [x] Root-cause the July regression: run the `cisa_alerts` fetcher in isolation; confirm the
       feed URL resolves, returns entries, and is not redirecting to a new location the fetcher
       fails to follow.
-- [ ] Update the feed URL / parser (or add redirect-following) as needed.
-- [ ] Confirm a subsequent (or forced) run reports cisa_alerts with items > 0 in `_health.json`.
-- [ ] If the feed was merely transiently down, document that and consider a retry/backoff so a
+- [x] Update the feed URL / parser (or add redirect-following) as needed.
+- [x] Confirm a subsequent (or forced) run reports cisa_alerts with items > 0 in `_health.json`.
+- [x] If the feed was merely transiently down, document that and consider a retry/backoff so a
       single 5AM fetch failure doesn't silently zero out a core source for the whole month.
 
 ## References

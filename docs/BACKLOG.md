@@ -17,11 +17,12 @@
 |----|-------|--------|----------|------------|--------|
 | 001 | congress_gov source returns 0 items (chronic since first run, 2026-04) | Delivered | P2 | C3 | Y |
 | 002 | openai_blog source regressed to 0 items in 2026-06 (was ~929) | Delivered | P2 | C3 | Y |
-| 003 | cisa_alerts source returned 0 items in 2026-07 (regression; 30/mo Apr-Jun) | Open | P2 | C3 | Y |
-| 004 | congress_gov returns bills but keyword/date filters not applied (relevance) | Open | P2 | C3 | Y |
+| 003 | cisa_alerts source returned 0 items in 2026-07 (regression; 30/mo Apr-Jun) | Delivered | P2 | C3 | Y |
+| 004 | congress_gov returns bills but keyword/date filters not applied (relevance) | Delivered | P2 | C3 | Y |
+| 201 | Congress.gov resolutions link to the bill URL path instead of the resolution path | Open | P3 | C3 | Y |
 | 200 | Restore SPECTRA after post-Claude automation cutover omission | Delivered | P1 | C4 | Y |
 
-_The Codex-native monthly automation is active and produces review artifacts; external delivery remains approval-gated. Source-health detection works (warnings fire). Open feed-repair tickets: 003 (cisa_alerts regressed to 0 items in 2026-07) and 004 (congress_gov relevance remains incomplete). Tickets 001/002 delivered._
+_The Codex-native monthly automation is active and produces review artifacts; external delivery remains approval-gated. Source-health detection works (warnings fire). Feed-repair tickets 001-004 delivered (003 and 004 on 2026-10-26, live-verified). Open: 201 (resolution links)._
 
 ## Historical detail (pre-canonicalization)
 
@@ -96,4 +97,5 @@ The original phase-by-phase checklist below preserves what was delivered in each
 [002]: docs/tickets/002-openai-blog-zero-items.md
 [003]: docs/tickets/003-cisa-alerts-zero-items.md
 [004]: docs/tickets/004-congress-gov-keyword-filter.md
+[201]: docs/tickets/201-congress-resolution-links.md
 [200]: docs/tickets/200-post-claude-automation-cutover.md

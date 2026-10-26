@@ -1,5 +1,5 @@
 # 004: congress_gov returns bills but keyword/date filters not applied (relevance bug)
-**Status**: Open  **Priority**: P2  **Type**: Bug
+**Status**: Delivered  **Priority**: P2  **Type**: Bug
 **Created**: 2026-07-01
 
 ## Summary
@@ -41,11 +41,11 @@ Likely causes to check in `src/collect/fetchers/congress_gov.py`:
   001 verified *count > 0*, not *relevance*.
 
 ## Acceptance Criteria
-- [ ] Inspect the actual API request the fetcher builds; confirm whether `search_term` and
+- [x] Inspect the actual API request the fetcher builds; confirm whether `search_term` and
       `days_back` reach the request.
-- [ ] Fix so results are keyword-scoped to cybersecurity and bounded to the recent window.
-- [ ] Verify a run returns bills that are plausibly cybersecurity-related and recent.
-- [ ] Consider filtering out simple resolutions (SRES/HRES ceremonial items) if the API can't
+- [x] Fix so results are keyword-scoped to cybersecurity and bounded to the recent window.
+- [x] Verify a run returns bills that are plausibly cybersecurity-related and recent.
+- [x] Consider filtering out simple resolutions (SRES/HRES ceremonial items) if the API can't
       exclude them.
 
 ## References
@@ -110,3 +110,14 @@ IDs or edit BACKLOG.
 `requirements.txt`), and no `CONGRESS_GOV_API_KEY` entry was visible in the
 workstation keyring. Until the key is provisioned on the workstation, the
 monthly run gets nothing from this source. Ticket stays open.
+
+## Live verification (2026-10-26, after the key was stored)
+
+Jeff stored the key in the workstation keyring (KWallet, through Secret
+Service), and `keyring` is now installed in SPECTRA's `.venv`. The check
+script returned `cisa_alerts: 30 items` and `congress_gov: 2 items` for
+2026-10-01 to 2026-11-01: S 3315 (Health Care Cybersecurity and Resiliency
+Act of 2026, latest action 2026-10-05) and HR 10238 (Cybersecurity for Small
+Businesses Act of 2026, 2026-10-13). Both are on topic and in the window.
+Ceremonial resolutions were not excluded by type; relevant ones are kept by
+design (see Resolution). The resolution-link defect moved to ticket 201.
