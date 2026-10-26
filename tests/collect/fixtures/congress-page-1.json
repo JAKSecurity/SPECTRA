@@ -1,0 +1,40 @@
+{
+  "bills": [
+    {
+      "congress": 119,
+      "type": "HR",
+      "number": "1",
+      "title": "No Aid for Ghost Students Act",
+      "updateDate": "2026-10-25",
+      "latestAction": {
+        "actionDate": "2026-10-10",
+        "text": "Referred to committee."
+      }
+    },
+    {
+      "congress": 119,
+      "type": "HR",
+      "number": "2",
+      "title": "Cybersecurity Act",
+      "updateDate": "2026-10-25",
+      "latestAction": {
+        "actionDate": "2025-03-01",
+        "text": "Referred to committee."
+      }
+    },
+    {
+      "congress": 119,
+      "type": "HR",
+      "number": "3",
+      "title": "Cybersecurity Workforce Act",
+      "updateDate": "2026-10-25",
+      "latestAction": {
+        "actionDate": "2026-10-01",
+        "text": "Referred to committee."
+      }
+    }
+  ],
+  "pagination": {
+    "next": "https://api.congress.gov/v3/bill?offset=250"
+  }
+}

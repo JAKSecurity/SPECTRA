@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timezone
 from html import unescape
 
+import requests
 import feedparser as _feedparser
 
 from .base import BaseFetcher, FetchedItem, FetchResult
@@ -21,7 +22,10 @@ class _FeedparserProxy:
     independently of the global feedparser module."""
 
     def parse(self, url_or_string: str):
-        return _feedparser.parse(url_or_string)
+        # requests follows redirects and bounds network waits; parse the response body.
+        response = requests.get(url_or_string, timeout=30)
+        response.raise_for_status()
+        return _feedparser.parse(response.content)
 
 
 feedparser = _FeedparserProxy()

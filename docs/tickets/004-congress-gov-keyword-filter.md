@@ -53,3 +53,51 @@ Likely causes to check in `src/collect/fetchers/congress_gov.py`:
 - Config: `src/collect/config.yaml` (congress_gov search_term / days_back)
 - Design: `docs/superpowers/specs/2026-04-10-spectra-design.md` (Congress.gov API source)
 - Related: ticket 001 (congress_gov 0-items / API-key wiring — the count fix this builds on)
+
+## Resolution
+
+Investigated 2026-10-26 for packet spectra1. The current OpenAPI specification
+embedded at https://api.congress.gov/ lists `/bill` parameters `format`, `offset`,
+`limit`, `fromDateTime` and `toDateTime`. It does not list `query` or `sort` for
+this endpoint. Date parameters filter update timestamps, not legislative action
+dates. The [Library of Congress bill documentation](https://github.com/LibraryOfCongress/api.congress.gov/blob/main/Documentation/BillEndpoint.md)
+also distinguishes `updateDate` from `latestAction.actionDate`. Thus the old
+`query` parameter did not establish relevance; recent updates could expose old
+legislative actions. This corrects the Summary's unverified `/search` hypothesis.
+
+The fetcher now requests JSON pages of 250 bills, using documented offset/date
+parameters and a maximum of 40 pages. It exhausts pagination instead of stopping
+at an old action (update dates and action dates differ). Reaching the cap with
+more data raises an incomplete-window health error rather than publishing a
+partial success. Pagination URLs are never followed; offsets are built locally
+and the key remains solely in the `X-Api-Key` header.
+
+Local filtering matches any configured term, case-insensitively, in title or
+latest-action text, and requires a valid latest-action date inside the report
+window (inclusive start, exclusive end). Without an explicit report window,
+`days_back` now supplies the local lower bound and today is included. Config
+uses an extendable `search_terms` list: cybersecurity, cyber security,
+cyber-security. Legacy scalar `search_term` remains supported. Relevant
+resolutions are retained; no blanket bill-type exclusion is introduced.
+
+No environment/keyring key was readable in this sandbox. Congress fixtures
+are explicitly labeled deterministic API-shaped examples, not live captures;
+they cover unrelated/old/undated/exclusive-end drops, title/action matches,
+pagination, term extension, day fallback and page-cap failure. The relevance
+regression fails on the old code. Live validation must be rerun by the dispatcher:
+
+```bash
+/home/jak3676/src/JAKSecurity/SPECTRA/.venv/bin/python /home/jak3676/.local/state/workshop-codex-queue/worktrees/q-spectra1/scripts/check-source-window.py --report-month 2026-11
+```
+
+This read-only command prints counts only, loads credentials from the environment
+or keyring (`ai-assistant` / `CONGRESS_GOV_API_KEY`), and exits nonzero if a source
+cannot be checked. No ticket status or acceptance checkboxes changed here.
+
+### Dispatcher follow-up
+
+The existing `_bill_url` helper maps every House/Senate measure to a bill URL;
+resolutions require their corresponding resolution URL path. This pre-existing
+link defect is outside the two source-filter fixes and should receive a separate
+BACKLOG item in the designated allocator checkout. This packet does not mint
+IDs or edit BACKLOG.

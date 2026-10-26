@@ -47,3 +47,28 @@ issue here first.
 - Health reports: `data/sources/<YYYY-MM>/_health.json`
 - Related: ticket 002 (openai_blog feed regression — same class of failure); AI Assistant
   AIA-089 (auto-escalation loop)
+
+## Resolution
+
+Investigated 2026-10-26 for packet spectra1. The supplied native source directory
+retains only August, September and October health files; July's `_health.json`
+and response body are absent. The ticket records July's zero count, but there
+is no retained HTTP status, content type or redirect evidence to establish an
+exact cause. Treat this as a likely transient failed/empty response, not a
+confirmed URL migration. Retained health counts are August 0 (a September 6
+backfill), September 10 and October 30.
+
+Live check: the configured URL returns HTTP 200 without redirects,
+`application/rss+xml; charset=utf-8`, RSS 2.0, 30 entries, all inside
+2026-10-01 inclusive through 2026-11-01 exclusive as of October 26. No URL
+change is needed. The previous feedparser transport already followed redirects,
+but empty entries were silently returned without status evidence or a retry.
+
+The RSS transport now follows redirects using requests, checks HTTP status and
+uses a 30-second timeout. The collector retries a configured core source once
+after one second on either an exception or an empty report-window result,
+before saving output/health. Only `cisa_alerts` is newly marked core. A second
+failure remains an error; a second empty result remains an empty warning.
+Offline replay covers empty XML, HTML, HTTP 503 and timeout recovery, as well
+as exhausted retries. The empty-response regression test fails on the old
+collector. No ticket status or acceptance checkboxes changed in this packet.
