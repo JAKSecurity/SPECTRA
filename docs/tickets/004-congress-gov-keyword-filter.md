@@ -87,7 +87,7 @@ pagination, term extension, day fallback and page-cap failure. The relevance
 regression fails on the old code. Live validation must be rerun by the dispatcher:
 
 ```bash
-/home/jak3676/src/JAKSecurity/SPECTRA/.venv/bin/python /home/jak3676/.local/state/workshop-codex-queue/worktrees/q-spectra1/scripts/check-source-window.py --report-month 2026-11
+/home/jak3676/src/JAKSecurity/SPECTRA/.venv/bin/python /home/jak3676/src/JAKSecurity/SPECTRA/scripts/check-source-window.py --report-month 2026-11
 ```
 
 This read-only command prints counts only, loads credentials from the environment
