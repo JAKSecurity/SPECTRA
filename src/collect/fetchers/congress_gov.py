@@ -1,6 +1,8 @@
 import hashlib
+import logging
 import os
 from datetime import datetime, timezone, timedelta
+from urllib.parse import urlencode
 
 import requests
 
@@ -8,10 +10,37 @@ from .base import BaseFetcher, FetchedItem, FetchResult
 from .rss import _strip_html
 
 
+logger = logging.getLogger(__name__)
+
+_MEASURE_PATHS = {
+    "HR": "house-bill",
+    "S": "senate-bill",
+    "HRES": "house-resolution",
+    "SRES": "senate-resolution",
+    "HCONRES": "house-concurrent-resolution",
+    "SCONRES": "senate-concurrent-resolution",
+    "HJRES": "house-joint-resolution",
+    "SJRES": "senate-joint-resolution",
+}
+
+
+def _ordinal(number: int) -> str:
+    """Format a congress number with its English ordinal suffix."""
+    suffix = (
+        "th" if 11 <= number % 100 <= 13
+        else {1: "st", 2: "nd", 3: "rd"}.get(number % 10, "th")
+    )
+    return f"{number}{suffix}"
+
+
 def _bill_url(congress: int, bill_type: str, number: str) -> str:
-    """Construct a congress.gov URL from bill metadata."""
-    chamber = "senate" if bill_type.upper().startswith("S") else "house"
-    return f"https://www.congress.gov/bill/{congress}th-congress/{chamber}-bill/{number}"
+    """Construct a congress.gov measure URL, or search for unknown types."""
+    path = _MEASURE_PATHS.get(bill_type.upper())
+    if path is None:
+        # WHY: Guessing a chamber's bill path can link to a different measure (201).
+        logger.warning("Unknown Congress.gov measure type %r; falling back to search", bill_type)
+        return f"https://www.congress.gov/search?{urlencode({'q': number})}"
+    return f"https://www.congress.gov/bill/{_ordinal(congress)}-congress/{path}/{number}"
 
 
 def _keyring_api_key() -> str:

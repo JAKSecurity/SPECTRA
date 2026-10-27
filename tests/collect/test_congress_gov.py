@@ -1,5 +1,7 @@
 from unittest.mock import patch, MagicMock
 
+import pytest
+
 from src.collect.fetchers.congress_gov import CongressGovFetcher, _bill_url
 
 
@@ -32,6 +34,51 @@ MOCK_CONGRESS_RESPONSE = {
 
 
 class TestBillUrl:
+    @pytest.mark.parametrize("bill_type, path", [
+        ("HR", "house-bill"),
+        ("S", "senate-bill"),
+        ("HRES", "house-resolution"),
+        ("SRES", "senate-resolution"),
+        ("HCONRES", "house-concurrent-resolution"),
+        ("SCONRES", "senate-concurrent-resolution"),
+        ("HJRES", "house-joint-resolution"),
+        ("SJRES", "senate-joint-resolution"),
+    ])
+    def test_measure_type(self, bill_type, path):
+        assert _bill_url(119, bill_type, "1") == (
+            f"https://www.congress.gov/bill/119th-congress/{path}/1"
+        )
+
+    def test_lowercase_type(self):
+        assert _bill_url(119, "hjres", "1") == (
+            "https://www.congress.gov/bill/119th-congress/house-joint-resolution/1"
+        )
+
+    def test_unknown_type_uses_search_and_logs(self, caplog):
+        assert _bill_url(119, "UNKNOWN", "1234") == (
+            "https://www.congress.gov/search?q=1234"
+        )
+        assert len(caplog.records) == 1
+        record = caplog.records[0]
+        assert record.name == "src.collect.fetchers.congress_gov"
+        assert record.levelname == "WARNING"
+        assert "UNKNOWN" in record.message
+        assert "search" in record.message
+
+    def test_search_number_is_encoded(self):
+        assert _bill_url(119, "UNKNOWN", "12&34") == (
+            "https://www.congress.gov/search?q=12%2634"
+        )
+
+    @pytest.mark.parametrize("congress, ordinal", [
+        (119, "119th"), (121, "121st"), (122, "122nd"),
+        (123, "123rd"), (111, "111th"), (112, "112th"), (113, "113th"),
+    ])
+    def test_congress_ordinal(self, congress, ordinal):
+        assert _bill_url(congress, "HR", "1") == (
+            f"https://www.congress.gov/bill/{ordinal}-congress/house-bill/1"
+        )
+
     def test_house_bill(self):
         url = _bill_url(119, "HR", "1234")
         assert url == "https://www.congress.gov/bill/119th-congress/house-bill/1234"
