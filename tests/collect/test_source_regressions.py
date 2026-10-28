@@ -9,9 +9,108 @@ import requests
 import yaml
 
 from src.collect.fetchers.congress_gov import CongressGovFetcher
+from src.collect.fetchers.rss import RSSFetcher, USER_AGENT
 from src.collect.runner import run_collect
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def rss_config(**overrides):
+    return {
+        "url": "https://example.test/feed/?topic=security",
+        "paged": True, "max_pages": 5,
+        "start_date": "2026-10-01", "end_date": "2026-11-01", **overrides,
+    }
+
+
+@pytest.mark.parametrize("stop", ["empty", "older", "404"])
+def test_rss_paging_stops_and_deduplicates(stop, caplog):
+    last = {
+        "empty": response("empty-feed.xml"),
+        "older": response("wordpress-page-3.xml"),
+        "404": response("unavailable.html", 404),
+    }[stop]
+    with patch("src.collect.fetchers.rss.requests.get", side_effect=[
+        response("wordpress-page-1.xml"), response("wordpress-page-2.xml"), last,
+    ]) as get:
+        result = RSSFetcher("test", rss_config()).fetch()
+    assert [item.published for item in result.items] == ["2026-10-28", "2026-10-27", "2026-10-01"]
+    assert len({item.id for item in result.items}) == 3
+    assert [call.args[0] for call in get.call_args_list] == [
+        "https://example.test/feed/?topic=security",
+        "https://example.test/feed/?topic=security&paged=2",
+        "https://example.test/feed/?topic=security&paged=3",
+    ]
+    for call in get.call_args_list:
+        assert call.kwargs == {"headers": {"User-Agent": USER_AGENT}, "timeout": 30}
+    assert not caplog.records
+
+
+@pytest.mark.parametrize("limit, expected", [(None, 1), (2, 2), (50, 10), (0, 1)])
+def test_rss_paging_warns_at_bounded_cap(limit, expected, caplog):
+    config = rss_config()
+    if limit is None:
+        config.pop("max_pages")
+    else:
+        config["max_pages"] = limit
+    with patch("src.collect.fetchers.rss.requests.get", return_value=response("wordpress-page-1.xml")) as get:
+        result = RSSFetcher("test", config).fetch()
+    assert get.call_count == expected
+    assert len(result.items) == 2
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == "WARNING"
+    assert f"page cap ({expected})" in caplog.text
+
+
+@pytest.mark.parametrize("paged", [None, False])
+def test_rss_without_paging_makes_one_identified_request(paged, caplog):
+    config = rss_config()
+    if paged is None:
+        config.pop("paged")
+    else:
+        config["paged"] = paged
+    with patch("src.collect.fetchers.rss.requests.get", return_value=response("wordpress-page-1.xml")) as get:
+        assert len(RSSFetcher("test", config).fetch().items) == 2
+    get.assert_called_once_with(config["url"], headers={"User-Agent": USER_AGENT}, timeout=30)
+    assert USER_AGENT == "SPECTRA-monthly-report/1.0 (+https://github.com/JAKSecurity/SPECTRA)"
+    assert not caplog.records
+
+
+@pytest.mark.parametrize("status, paged", [(404, True), (403, True), (503, True), (404, False)])
+def test_rss_first_page_errors_still_raise(status, paged):
+    with patch("src.collect.fetchers.rss.requests.get", return_value=response("unavailable.html", status)) as get:
+        with pytest.raises(requests.HTTPError):
+            RSSFetcher("test", rss_config(paged=paged)).fetch()
+    assert get.call_count == 1
+
+
+def test_rss_later_page_non_404_error_still_raises():
+    with patch("src.collect.fetchers.rss.requests.get", side_effect=[
+        response("wordpress-page-1.xml"), response("unavailable.html", 403),
+    ]) as get:
+        with pytest.raises(requests.HTTPError):
+            RSSFetcher("test", rss_config()).fetch()
+    assert get.call_count == 2
+
+
+def test_rss_undated_page_does_not_stop_paging():
+    undated = response("wordpress-page-3.xml")
+    undated._content = undated.content.replace(
+        b"<pubDate>Wed, 30 Sep 2026 12:00:00 +0000</pubDate>", b""
+    )
+    with patch("src.collect.fetchers.rss.requests.get", side_effect=[
+        undated, response("wordpress-page-1.xml"), response("empty-feed.xml"),
+    ]) as get:
+        result = RSSFetcher("test", rss_config()).fetch()
+    assert get.call_count == 3
+    assert len(result.items) == 2
+
+
+def test_only_cyberscoop_opts_into_rss_paging():
+    config_path = Path(__file__).parents[2] / "src/collect/config.yaml"
+    sources = yaml.safe_load(config_path.read_text())["sources"]
+    assert [name for name, config in sources.items() if config.get("paged")] == ["cyberscoop"]
+    assert sources["cyberscoop"]["max_pages"] == 5
 
 
 def response(filename, status=200):

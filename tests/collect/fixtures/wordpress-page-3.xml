@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sanitized recorded-shape WordPress RSS: GUID, reader link, date, HTML summary. -->
+<rss version="2.0"><channel>
+<title>Example news</title><link>https://example.test/</link><description>News</description>
+  <item>
+    <title>Sanitized article old</title>
+    <link>https://example.test/old/</link>
+    <guid isPermaLink="false">https://example.test/?p=old</guid>
+    <pubDate>Wed, 30 Sep 2026 12:00:00 +0000</pubDate>
+    <description>&lt;p&gt;Article summary.&lt;/p&gt;</description>
+  </item>
+  <item>
+    <title>Sanitized article older</title>
+    <link>https://example.test/older/</link>
+    <guid isPermaLink="false">https://example.test/?p=older</guid>
+    <pubDate>Tue, 29 Sep 2026 12:00:00 +0000</pubDate>
+    <description>&lt;p&gt;Article summary.&lt;/p&gt;</description>
+  </item>
+</channel></rss>
