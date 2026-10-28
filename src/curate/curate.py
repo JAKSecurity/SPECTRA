@@ -18,13 +18,27 @@ def load_items(source_dir: str) -> list:
 
 
 def deduplicate(items: list) -> list:
-    """Remove items with duplicate URLs, keeping first occurrence."""
-    seen = set()
+    """Keep the first occurrence of each entry at a URL.
+
+    Nonempty IDs identify entries. If either ID is missing, compare titles
+    (case and whitespace normalized) and publication dates instead. Both
+    fallback fields must be present; incomplete metadata cannot prove a repeat.
+    """
+    seen_by_url = {}
     unique = []
     for item in items:
         url = item.get("url", "")
-        if url not in seen:
-            seen.add(url)
+        item_id = (item.get("id") or "").strip()
+        title = " ".join((item.get("title") or "").casefold().split())
+        published = (item.get("published") or "").strip()
+        entries = seen_by_url.setdefault(url, [])
+        duplicate = any(
+            item_id == previous_id if item_id and previous_id else
+            bool(title and published and (title, published) == (previous_title, previous_date))
+            for previous_id, previous_title, previous_date in entries
+        )
+        if not duplicate:
+            entries.append((item_id, title, published))
             unique.append(item)
     return unique
 

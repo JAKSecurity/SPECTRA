@@ -10,3 +10,10 @@ based on the existing test payload and the Library of Congress bill endpoint
 schema. Dates and titles deliberately exercise October boundaries; they are
 not evidence of a live Congress.gov fetch. No key was readable in the sandbox.
 The unrelated title reproduces the example in ticket 004 (Congress filtering).
+
+`fedramp-changelog.xml` reconstructs the four-entry response shape recorded in
+`docs/reviews/2026-10-28-november-run-readiness.md`: shared reader link,
+distinct feed identifier suffixes (98–95), titles, and October dates. The raw
+response was unavailable; full identifier prefixes and publication times are
+fixture values, not independently verified upstream fields. No live request
+is needed to exercise collection and preparation.
