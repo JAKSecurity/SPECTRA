@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+<title>FedRAMP Changelog</title>
+<link>https://www.fedramp.gov/changelog</link>
+<description>October changelog regression fixture</description>
+<item>
+  <title>Marketplace display of 20x Pilot certifications</title>
+  <link>https://www.fedramp.gov/changelog</link>
+  <guid isPermaLink="false">https://www.fedramp.gov/changelog/98</guid>
+  <pubDate>Wed, 21 Oct 2026 12:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>RFC 0036: 20x Class D Cloud-Hosted Pilot Requirements</title>
+  <link>https://www.fedramp.gov/changelog</link>
+  <guid isPermaLink="false">https://www.fedramp.gov/changelog/97</guid>
+  <pubDate>Thu, 15 Oct 2026 12:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>RFC 0035: Cryptographic Module Use Updates</title>
+  <link>https://www.fedramp.gov/changelog</link>
+  <guid isPermaLink="false">https://www.fedramp.gov/changelog/96</guid>
+  <pubDate>Wed, 14 Oct 2026 12:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Fiscal year 2026 results and fiscal year 2027 outlook blog announcement</title>
+  <link>https://www.fedramp.gov/changelog</link>
+  <guid isPermaLink="false">https://www.fedramp.gov/changelog/95</guid>
+  <pubDate>Thu, 08 Oct 2026 12:00:00 GMT</pubDate>
+</item>
+</channel></rss>

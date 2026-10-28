@@ -1,6 +1,8 @@
 import json
 import os
 
+import pytest
+
 from src.curate.curate import load_items, deduplicate, prep_items
 
 
@@ -25,16 +27,57 @@ class TestLoadItems:
 
 
 class TestDeduplicate:
-    def test_removes_duplicate_urls(self):
+    def test_removes_same_entry_at_same_url(self):
         items = [
             {"id": "a", "url": "https://example.com/1", "title": "First"},
-            {"id": "b", "url": "https://example.com/1", "title": "Duplicate"},
+            {"id": "a", "url": "https://example.com/1", "title": "Updated title"},
             {"id": "c", "url": "https://example.com/2", "title": "Second"},
         ]
         result = deduplicate(items)
         assert len(result) == 2
         assert result[0]["id"] == "a"
         assert result[1]["id"] == "c"
+
+    def test_distinct_ids_survive_even_with_matching_title_and_date(self):
+        first = {"id": "a", "url": "https://example.com/shared",
+                 "title": "Update", "published": "2026-10-21"}
+        second = dict(first, id="b")
+        assert deduplicate([first, second]) == [first, second]
+
+    def test_same_id_at_different_urls_survives(self):
+        first = {"id": "a", "url": "https://example.com/1"}
+        second = dict(first, url="https://example.com/2")
+        assert deduplicate([first, second]) == [first, second]
+
+    @pytest.mark.parametrize("first_id, second_id", [
+        (None, None), ("", ""), ("a", None), (None, "a"),
+    ])
+    def test_missing_ids_use_normalized_title_and_date(self, first_id, second_id):
+        first = {"url": "https://example.com/shared", "title": "  Policy  UPDATE ",
+                 "published": "2026-10-21"}
+        second = dict(first, title="policy\nupdate")
+        if first_id is not None:
+            first["id"] = first_id
+        if second_id is not None:
+            second["id"] = second_id
+        assert deduplicate([first, second]) == [first]
+
+    @pytest.mark.parametrize("changes", [
+        {"title": "Different update"}, {"published": "2026-10-22"},
+        {"url": "https://example.com/other"},
+    ])
+    def test_missing_ids_preserve_distinct_entries(self, changes):
+        first = {"url": "https://example.com/shared", "title": "Policy update",
+                 "published": "2026-10-21"}
+        second = dict(first, **changes)
+        assert deduplicate([first, second]) == [first, second]
+
+    @pytest.mark.parametrize("metadata", [{}, {"title": "Update"},
+                                            {"published": "2026-10-21"}])
+    def test_incomplete_identity_is_not_enough_to_drop_items(self, metadata):
+        first = dict(metadata, url="https://example.com/shared")
+        second = dict(first)
+        assert len(deduplicate([first, second])) == 2
 
     def test_preserves_order(self):
         items = [
@@ -72,7 +115,7 @@ class TestPrepItems:
             assert "_source" not in item
 
     def test_deduplicates_items(self, tmp_path):
-        """Prep should deduplicate by URL."""
+        """Repeated entries at the same URL collapse across fetches."""
         source_dir = tmp_path / "sources"
         source_dir.mkdir()
 
@@ -89,7 +132,7 @@ class TestPrepItems:
             "source": "feed_b",
             "fetched_at": "2026-04-07T09:00:00Z",
             "items": [
-                {"id": "y", "title": "Shared Item Copy", "url": "https://example.com/shared",
+                {"id": "x", "title": "Shared Item Copy", "url": "https://example.com/shared",
                  "published": "2026-04-07", "summary": "Dup copy.", "category_hint": "news"},
                 {"id": "z", "title": "Unique Item", "url": "https://example.com/unique",
                  "published": "2026-04-07", "summary": "Unique.", "category_hint": "news"}

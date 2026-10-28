@@ -39,8 +39,10 @@ class RSSFetcher(BaseFetcher):
         feed = feedparser.parse(url)
         items = []
         for entry in feed.entries:
-            link = entry.get("link", entry.get("id", ""))
-            item_id = hashlib.sha256(link.encode()).hexdigest()[:16]
+            link = entry.get("link", "")
+            # WHY: landing pages can host distinct entries; feed IDs are not reader URLs.
+            identity = (entry.get("id") or "").strip() or (entry.get("guid") or "").strip() or link
+            item_id = hashlib.sha256(identity.encode()).hexdigest()[:16]
 
             published = ""
             if hasattr(entry, "published_parsed") and entry.published_parsed:
