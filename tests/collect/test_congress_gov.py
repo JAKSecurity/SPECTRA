@@ -89,7 +89,7 @@ class TestBillUrl:
 
 
 class TestCongressGovFetcher:
-    def test_returns_empty_without_api_key(self):
+    def test_returns_unavailable_without_api_key(self):
         config = {"search_term": "cybersecurity", "category_hint": "legislative"}
         fetcher = CongressGovFetcher("congress_gov", config)
 
@@ -101,6 +101,7 @@ class TestCongressGovFetcher:
             result = fetcher.fetch()
 
         assert result.source == "congress_gov"
+        assert result.status == "unavailable"
         assert len(result.items) == 0
 
     def test_fetches_bills_with_api_key(self):

@@ -31,12 +31,21 @@ class FetchResult:
     source: str
     fetched_at: str
     items: List[FetchedItem]
+    status: str = "ok"
+    pages_fetched: int | None = None
+    page_cap_reached: bool | None = None
+    # None means no comparable dated entry/window, or coverage is not reported.
+    window_start_reached: bool | None = None
 
     def to_dict(self) -> dict:
         return {
             "source": self.source,
             "fetched_at": self.fetched_at,
             "items": [item.to_dict() for item in self.items],
+            "status": self.status,
+            "pages_fetched": self.pages_fetched,
+            "page_cap_reached": self.page_cap_reached,
+            "window_start_reached": self.window_start_reached,
         }
 
 
