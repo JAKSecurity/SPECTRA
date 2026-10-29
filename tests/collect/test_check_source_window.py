@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+from src.collect.fetchers.base import FetchResult
+
 import pytest
 
 
@@ -21,7 +23,7 @@ def checker(monkeypatch):
 
 
 def result(*dates):
-    return SimpleNamespace(items=[SimpleNamespace(published=value) for value in dates])
+    return FetchResult("test", "2026-10-29", [SimpleNamespace(published=value) for value in dates])
 
 
 def test_all_enabled_sources_in_config_order(checker, monkeypatch, capsys):
@@ -47,6 +49,44 @@ def test_all_enabled_sources_in_config_order(checker, monkeypatch, capsys):
     assert all("3 items; earliest=2026-10-02; latest=2026-10-20; ok" in line for line in lines[1:-1])
     assert f"{len(names)} sources; {3 * len(names)} items; ok={len(names)}" in lines[-1]
     fetcher.save.assert_not_called()
+
+
+@pytest.mark.parametrize("cap, boundary, count, expected", [
+    (True, False, 1, "partial"),
+    (True, True, 1, "partial"),
+    (False, False, 1, "partial"),
+    (False, False, 0, "partial"),
+    (False, True, 1, "ok"),
+    (None, None, 1, "ok"),
+    (None, None, 0, "zero"),
+])
+def test_coverage_matches_collection_health(checker, monkeypatch, capsys, cap, boundary, count, expected):
+    monkeypatch.setattr(sys, "argv", sys.argv + ["--all"])
+    monkeypatch.setattr(checker, "load_config", lambda _: {"sources": {"feed": {}}})
+    fetched = result(*(["2026-10-03"] * count))
+    fetched.page_cap_reached = cap
+    fetched.window_start_reached = boundary
+    fetcher = Mock(fetch=Mock(return_value=fetched))
+    monkeypatch.setattr(checker, "get_fetcher", Mock(return_value=fetcher))
+
+    assert checker.main() == 0  # Partial coverage retains the existing success exit code.
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[1].endswith(f"; {expected}")
+    assert f"{count} items" in lines[1]
+    assert f"{expected}=1" in lines[-1]
+    fetcher.save.assert_not_called()
+
+
+def test_fetcher_unavailable_is_unknown_not_zero(checker, monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", sys.argv + ["--all"])
+    monkeypatch.setattr(checker, "load_config", lambda _: {"sources": {"feed": {}}})
+    fetched = result()
+    fetched.status = "unavailable"
+    monkeypatch.setattr(checker, "get_fetcher", Mock(return_value=Mock(fetch=Mock(return_value=fetched))))
+    assert checker.main() == 1
+    output = capsys.readouterr().out
+    assert "feed: unknown items; earliest=-; latest=-; unavailable (not a verified zero)" in output
+    assert "0 items; ok=0; zero=0; failed=0; unavailable=1; partial=0" in output
 
 
 def test_four_statuses_and_safe_error_output(checker, monkeypatch, capsys):
