@@ -24,6 +24,8 @@ sources:
   cyberscoop:
     type: rss
     url: "https://cyberscoop.com/feed/"
+    paged: true
+    max_pages: 5
     category_hint: news
     enabled: true
 
