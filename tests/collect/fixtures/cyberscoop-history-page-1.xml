@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss version="2.0">
+  <channel>
+    <title>CyberScoop</title>
+    <link>https://cyberscoop.com/</link>
+    <description />
+    <generator>https://wordpress.org/?v=7.1.4</generator>
+    <item>
+      <title>Officials seize domain of top bulletproof hosting provider Virtualine</title>
+      <link>https://cyberscoop.com/virtualine-bulletproof-hosting-provider-seized/</link>
+      <guid isPermaLink="false">https://cyberscoop.com/?p=91323</guid>
+      <pubDate>Thu, 29 Oct 2026 00:38:19 +0000</pubDate>
+    </item>
+    <item>
+      <title>What happens when security tools go dark before the ransomware</title>
+      <link>https://cyberscoop.com/warlock-ransomware-storm-2603-sharepoint-attacks-op-ed/</link>
+      <guid isPermaLink="false">https://cyberscoop.com/?p=91273</guid>
+      <pubDate>Tue, 27 Oct 2026 10:00:00 +0000</pubDate>
+    </item>
+  </channel>
+</rss>
