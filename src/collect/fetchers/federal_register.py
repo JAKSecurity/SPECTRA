@@ -34,10 +34,13 @@ class FederalRegisterFetcher(BaseFetcher):
         }
         items = []
         seen = set()
+        pages_fetched = 0
+        page_cap_reached = False
         for _ in range(MAX_PAGES):
             resp = requests.get(url, params=params, timeout=30)
             resp.raise_for_status()
             data = resp.json()
+            pages_fetched += 1
 
             for doc in data.get("results", []):
                 document_number = doc.get("document_number")
@@ -66,6 +69,7 @@ class FederalRegisterFetcher(BaseFetcher):
             # The API continuation URL already carries the original query parameters.
             params = None
         else:
+            page_cap_reached = True
             logger.warning(
                 "Federal Register collection reached the %s-page cap; "
                 "more results remain and collection is incomplete",
@@ -76,4 +80,8 @@ class FederalRegisterFetcher(BaseFetcher):
             source=self.name,
             fetched_at=datetime.now(timezone.utc).isoformat(),
             items=items,
+            pages_fetched=pages_fetched,
+            page_cap_reached=page_cap_reached,
+            # Publication-date query bounds cover the requested window server-side.
+            window_start_reached=True,
         )

@@ -56,4 +56,8 @@ class CISAKEVFetcher(BaseFetcher):
             source=self.name,
             fetched_at=datetime.now(timezone.utc).isoformat(),
             items=items,
+            pages_fetched=1,
+            page_cap_reached=False,
+            # One parsed full-catalog download covers the window before local filtering.
+            window_start_reached=True,
         )

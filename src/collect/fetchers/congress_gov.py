@@ -95,6 +95,8 @@ class CongressGovFetcher(BaseFetcher):
         # https://api.congress.gov/ and LibraryOfCongress/api.congress.gov Documentation/BillEndpoint.md
         bills = []
         seen = set()
+        pages_fetched = 0
+        window_start_reached = None
         for page in range(max_pages):
             try:
                 resp = requests.get(
@@ -118,7 +120,18 @@ class CongressGovFetcher(BaseFetcher):
                 data = resp.json()
             except ValueError:
                 raise RuntimeError("congress_gov returned invalid JSON") from None
+            pages_fetched += 1
             for bill in data.get("bills", []):
+                # Update bounds do not bound action dates; only an observed older
+                # action proves this boundary (even on a nonmatching bill).
+                action_date = bill.get("latestAction", {}).get("actionDate", "")
+                try:
+                    datetime.strptime(action_date, "%Y-%m-%d")
+                except (ValueError, TypeError):
+                    pass
+                else:
+                    if action_date < start_date:
+                        window_start_reached = True
                 identity = (bill.get("congress"), bill.get("type"), bill.get("number"))
                 if identity not in seen:
                     seen.add(identity)
@@ -173,4 +186,8 @@ class CongressGovFetcher(BaseFetcher):
             source=self.name,
             fetched_at=datetime.now(timezone.utc).isoformat(),
             items=items,
+            pages_fetched=pages_fetched,
+            # A remaining next page at the cap still raises above; no result returns.
+            page_cap_reached=False,
+            window_start_reached=window_start_reached,
         )
