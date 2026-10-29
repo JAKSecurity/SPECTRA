@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import unicodedata
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlencode
 
@@ -85,6 +86,12 @@ class CongressGovFetcher(BaseFetcher):
                 items=[],
                 status="unavailable",
             )
+
+        # WHY: the 2026-10-28 workshop audit found InvalidHeader can expose keys.
+        if api_key != api_key.strip() or any(
+            unicodedata.category(char) == "Cc" for char in api_key
+        ):
+            raise ValueError("Congress.gov API key is malformed")
 
         now = datetime.now(timezone.utc)
         start_date = self.config.get("start_date") or (now - timedelta(days=days_back)).date().isoformat()

@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import re
 import time
 from datetime import date, datetime, timezone
 
@@ -12,6 +13,20 @@ from .fetchers import get_fetcher
 def load_config(config_path: str) -> dict:
     with open(config_path) as f:
         return yaml.safe_load(f)
+
+
+def _configured_secrets(config: dict) -> set[str]:
+    """Collect nonempty credential values without changing source configuration."""
+    secrets = set()
+    for name, value in config.items():
+        if isinstance(value, dict):
+            secrets.update(_configured_secrets(value))
+        elif isinstance(value, str) and value and name.lower() in {
+            "api_key", "x-api-key", "token", "api_token", "access_token",
+            "password", "secret", "client_secret", "authorization",
+        }:
+            secrets.add(value)
+    return secrets
 
 
 def report_window(report_month: str) -> tuple[str, str]:
@@ -32,6 +47,14 @@ def run_collect(
 ) -> list:
     """Run all enabled fetchers and write JSON output."""
     config = load_config(config_path)
+    secrets = _configured_secrets(config)
+    environment_key = os.environ.get("CONGRESS_GOV_API_KEY")
+    if environment_key:
+        secrets.add(environment_key)
+    secret_pattern = (
+        re.compile("|".join(re.escape(value) for value in sorted(secrets, key=len, reverse=True)))
+        if secrets else None
+    )
     report_month = report_month or datetime.now(timezone.utc).strftime("%Y-%m")
     start_date, end_date = report_window(report_month)
     month_dir = os.path.join(output_base, report_month)
@@ -77,8 +100,13 @@ def run_collect(
                 }
             )
         except Exception as e:
+            # WHY: the 2026-10-28 workshop audit found exception text leaks keys
+            # into results, health warnings and console output. Preserve diagnostics.
+            error = str(e)
+            if secret_pattern is not None:
+                error = secret_pattern.sub("[REDACTED]", error)
             results.append({
-                "source": name, "status": "error", "error": str(e),
+                "source": name, "status": "error", "error": error,
                 "pages_fetched": None, "page_cap_reached": None,
                 "window_start_reached": None,
             })
