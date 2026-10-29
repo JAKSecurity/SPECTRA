@@ -87,7 +87,7 @@ one fetch attempt per source and writes no collection or report files.
 
 ### Collection Health
 
-Collection writes `_health.json` in the issue month's source directory with per-source `pages_fetched`, `page_cap_reached`, and `window_start_reached` (true only after seeing a dated entry strictly before the window start; null means unknown).
+Collection writes `_health.json` in the issue month's source directory with per-source `pages_fetched`, `page_cap_reached`, and `window_start_reached` (true after seeing a dated entry strictly before the window start, a server-bounded publication-date query, or a complete catalog download; null means unknown). Federal Register counts parsed result pages and reports its ten-page cap when a next page remains. CISA Known Exploited Vulnerabilities (KEV) is one complete catalog download (one page, no cap). Congress.gov counts parsed bill pages; its server bounds apply to updates, so the action-date boundary stays unknown unless an older action is observed. Congress.gov retains its existing error on a page cap with more results, rather than returning partial items.
 Source status is `ok` when no coverage shortfall is reported, `partial` when the page cap was reached or the window start was not reached, `unavailable` when Congress.gov has no readable key (item count null, not zero), or `error` when collection raises; `ok` with unknown coverage does not certify a complete month.
 Existing summary totals retain successful collections, including partial sources and their items, while separate `partial` and `unavailable` counts and warnings expose coverage gaps; unavailable sources are excluded from empty-source and item totals.
 
