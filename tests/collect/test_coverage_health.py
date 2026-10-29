@@ -11,6 +11,7 @@ import yaml
 from src.collect.fetchers.base import BaseFetcher, FetchResult, FetchedItem
 from src.collect.fetchers.rss import RSSFetcher
 from src.collect.runner import main, run_collect
+from src.curate.curate import prep_items
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -145,6 +146,28 @@ def test_existing_fetcher_without_coverage_keeps_ok(tmp_path):
     assert results[0]["page_cap_reached"] is None
     assert results[0]["window_start_reached"] is None
     assert health["summary"]["succeeded"] == health["summary"]["total_items"] == 1
+
+
+def test_prepare_saved_coverage_and_unavailable_sources(tmp_path, monkeypatch):
+    """Exercise the saved-file contract, including health's null unavailable count."""
+    monkeypatch.delenv("CONGRESS_GOV_API_KEY", raising=False)
+    with patch("src.collect.fetchers.rss.requests.get", return_value=response("wordpress-page-1.xml")), \
+         patch("src.collect.fetchers.congress_gov._keyring_api_key", return_value=""):
+        results, health = collect(tmp_path, {
+            "feed": {"type": "rss", "url": "https://example.test/feed"},
+            "congress_gov": {"type": "congress_gov"},
+        })
+    entries = {entry["source"]: entry for entry in results}
+    assert entries["feed"]["status"] == "partial"
+    assert entries["congress_gov"]["status"] == "unavailable"
+    assert entries["congress_gov"]["items"] is None
+    output = tmp_path / "prepped.json"
+    prepped = prep_items(str(tmp_path / "sources/2026-11"), str(output))
+    assert len(prepped) == health["summary"]["total_items"] == 2
+    assert {item["source"] for item in prepped} == {"feed"}
+    assert json.loads(output.read_text()) == prepped
+    assert all(not {"status", "pages_fetched", "page_cap_reached", "window_start_reached"}
+               .intersection(item) for item in prepped)
 
 
 @pytest.mark.parametrize("failure", ["request", "json"])

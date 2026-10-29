@@ -77,9 +77,12 @@ PYTHONPATH="." python -m src.render.render data/drafts/2026-04-SPECTRA.md output
 The issue month `2026-11` checks October content. `--all` checks every enabled
 source in configuration order; omit it to check only `cisa_alerts` and
 `congress_gov`. Each line shows the item count, earliest/latest published dates,
-and `ok`, `zero`, `failed`, or `unavailable`, followed by summary totals. Failed
+and `ok`, `zero`, `partial`, `failed`, or `unavailable`, followed by summary totals.
+Coverage is `partial` when the page cap is reached or the window start is not
+reached, using the same criteria as collection health (including zero-item
+partial results). Unknown coverage alone does not imply `partial`. Failed
 and unavailable checks show an unknown count. Exit status is 1 for either of
-those statuses, otherwise 0 (including verified zero results). The command makes
+those statuses, otherwise 0 (including partial coverage and verified zero results). The command makes
 one fetch attempt per source and writes no collection or report files.
 
 ### Collection Health

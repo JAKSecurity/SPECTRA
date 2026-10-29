@@ -29,7 +29,7 @@ def main():
         [name for name, config in sources.items() if config.get("enabled", True)]
         if args.all else ("cisa_alerts", "congress_gov")
     )
-    totals = dict(ok=0, zero=0, failed=0, unavailable=0)
+    totals = dict(ok=0, zero=0, failed=0, unavailable=0, partial=0)
     total_items = 0
     for name in names:
         count, earliest, latest = "unknown", "-", "-"
@@ -46,13 +46,21 @@ def main():
             else:
                 # Keep this a single read-only probe, like the original checker.
                 result = get_fetcher(name, config).fetch()
+                if result.status == "unavailable":
+                    totals["unavailable"] += 1
+                    print(f"{name}: unknown items; earliest=-; latest=-; unavailable (not a verified zero)")
+                    continue
                 # Parse rather than echo arbitrary source text into this safe output.
                 dates = [date.fromisoformat(item.published) for item in result.items if item.published]
                 if dates:
                     earliest, latest = min(dates).isoformat(), max(dates).isoformat()
                 count = len(result.items)
                 total_items += count
-                status = "ok" if count else "zero"
+                status = (
+                    "partial" if result.status == "partial" or result.page_cap_reached
+                    or result.window_start_reached is False
+                    else "ok" if count else "zero"
+                )
                 detail = status
         except Exception as error:
             # Print only the exception class; never expose request internals.
