@@ -49,8 +49,8 @@ def _keyring_api_key() -> str:
     Uses the shared 'ai-assistant' keyring service (the same namespace
     scripts/secret_store.py provisions, so the standard vault tooling manages
     this key). Safe fallback: any failure (keyring missing, no entry, backend
-    error) returns "" so collection degrades to an empty result instead of
-    crashing -- matching the prior no-key behavior. Ticket 001."""
+    error) returns "" so collection reports unavailable instead of a verified
+    empty month. See docs/plans/2026-10-28-november-collect-rehearsal.md."""
     try:
         import keyring
 
@@ -83,6 +83,7 @@ class CongressGovFetcher(BaseFetcher):
                 source=self.name,
                 fetched_at=datetime.now(timezone.utc).isoformat(),
                 items=[],
+                status="unavailable",
             )
 
         now = datetime.now(timezone.utc)
@@ -95,21 +96,28 @@ class CongressGovFetcher(BaseFetcher):
         bills = []
         seen = set()
         for page in range(max_pages):
-            resp = requests.get(
-                "https://api.congress.gov/v3/bill",
-                params={
-                    "format": "json",
-                    "limit": 250,
-                    "offset": page * 250,
-                    "fromDateTime": f"{start_date}T00:00:00Z",
-                    "toDateTime": f"{end_date}T00:00:00Z",
-                },
-                headers={"X-Api-Key": api_key},
-                timeout=30,
-            )
+            try:
+                resp = requests.get(
+                    "https://api.congress.gov/v3/bill",
+                    params={
+                        "format": "json",
+                        "limit": 250,
+                        "offset": page * 250,
+                        "fromDateTime": f"{start_date}T00:00:00Z",
+                        "toDateTime": f"{end_date}T00:00:00Z",
+                    },
+                    headers={"X-Api-Key": api_key},
+                    timeout=30,
+                )
+            except requests.RequestException:
+                # WHY: the runner persists exception text; request details are private.
+                raise RuntimeError("congress_gov request failed") from None
             if resp.status_code != 200:
                 raise RuntimeError(f"congress_gov API error: HTTP {resp.status_code}")
-            data = resp.json()
+            try:
+                data = resp.json()
+            except ValueError:
+                raise RuntimeError("congress_gov returned invalid JSON") from None
             for bill in data.get("bills", []):
                 identity = (bill.get("congress"), bill.get("type"), bill.get("number"))
                 if identity not in seen:

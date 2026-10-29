@@ -82,6 +82,12 @@ and unavailable checks show an unknown count. Exit status is 1 for either of
 those statuses, otherwise 0 (including verified zero results). The command makes
 one fetch attempt per source and writes no collection or report files.
 
+### Collection Health
+
+Collection writes `_health.json` in the issue month's source directory with per-source `pages_fetched`, `page_cap_reached`, and `window_start_reached` (true only after seeing a dated entry strictly before the window start; null means unknown).
+Source status is `ok` when no coverage shortfall is reported, `partial` when the page cap was reached or the window start was not reached, `unavailable` when Congress.gov has no readable key (item count null, not zero), or `error` when collection raises; `ok` with unknown coverage does not certify a complete month.
+Existing summary totals retain successful collections, including partial sources and their items, while separate `partial` and `unavailable` counts and warnings expose coverage gaps; unavailable sources are excluded from empty-source and item totals.
+
 ### Automated Monthly Run
 
 The Codex `SPECTRA Monthly Report` automation runs at 5 AM on the first of each month. It collects the previous calendar month's sources, curates the report, renders the PDF, and presents the artifacts for review. Email and Discord delivery occur only after approval.

@@ -51,23 +51,37 @@ def run_collect(
             for attempt in range(2 if source_config.get("core", False) else 1):
                 try:
                     result = fetcher.fetch()
-                    if result.items or attempt == 1 or not source_config.get("core", False):
+                    if (result.status == "unavailable" or result.items
+                            or attempt == 1 or not source_config.get("core", False)):
                         break
                 except Exception:
                     if attempt == 1 or not source_config.get("core", False):
                         raise
                 time.sleep(1)
+            status = result.status
+            if status == "ok" and (
+                result.page_cap_reached or result.window_start_reached is False
+            ):
+                status = "partial"
+            result.status = status
             filepath = fetcher.save(result, month_dir)
             results.append(
                 {
                     "source": name,
-                    "status": "ok",
-                    "items": len(result.items),
+                    "status": status,
+                    "items": None if status == "unavailable" else len(result.items),
                     "file": filepath,
+                    "pages_fetched": result.pages_fetched,
+                    "page_cap_reached": result.page_cap_reached,
+                    "window_start_reached": result.window_start_reached,
                 }
             )
         except Exception as e:
-            results.append({"source": name, "status": "error", "error": str(e)})
+            results.append({
+                "source": name, "status": "error", "error": str(e),
+                "pages_fetched": None, "page_cap_reached": None,
+                "window_start_reached": None,
+            })
 
     # Write health report
     _write_health_report(results, month_dir, report_month, start_date, end_date)
@@ -83,7 +97,10 @@ def _write_health_report(
     end_date: str | None = None,
 ):
     """Save a health report JSON summarizing source fetch results."""
-    ok = [r for r in results if r["status"] == "ok"]
+    # WHY: partial coverage still collected usable items; preserve transport totals.
+    ok = [r for r in results if r["status"] in ("ok", "partial")]
+    partial = [r for r in results if r["status"] == "partial"]
+    unavailable = [r for r in results if r["status"] == "unavailable"]
     errors = [r for r in results if r["status"] == "error"]
     empty = [r for r in ok if r["items"] == 0]
 
@@ -97,6 +114,8 @@ def _write_health_report(
             "failed": len(errors),
             "empty": len(empty),
             "total_items": sum(r["items"] for r in ok),
+            "partial": len(partial),
+            "unavailable": len(unavailable),
         },
         "sources": results,
     }
@@ -109,6 +128,16 @@ def _write_health_report(
         report["warnings"] = report.get("warnings", []) + [
             f"{r['source']}: returned 0 items (feed may be stale or broken)"
             for r in empty
+        ]
+    if partial:
+        report["warnings"] = report.get("warnings", []) + [
+            f"{r['source']}: partial coverage (page cap reached or window start not reached)"
+            for r in partial
+        ]
+    if unavailable:
+        report["warnings"] = report.get("warnings", []) + [
+            f"{r['source']}: unavailable; item count unknown (not a verified zero)"
+            for r in unavailable
         ]
 
     report_path = os.path.join(month_dir, "_health.json")
@@ -135,18 +164,23 @@ def main():
     results = run_collect(args.config_path, args.output_base, report_month=report_month)
 
     for r in results:
-        if r["status"] == "ok":
-            print(f"  OK  {r['source']}: {r['items']} items -> {r['file']}")
+        if r["status"] in ("ok", "partial"):
+            print(f"  {r['status'].upper()}  {r['source']}: {r['items']} items -> {r['file']}")
+        elif r["status"] == "unavailable":
+            print(f"  UNAVAILABLE {r['source']}: unknown items (not a verified zero)")
         else:
             print(f"  ERR {r['source']}: {r['error']}")
 
-    ok_count = sum(1 for r in results if r["status"] == "ok")
+    ok_count = sum(1 for r in results if r["status"] in ("ok", "partial"))
     err_count = sum(1 for r in results if r["status"] == "error")
-    total_items = sum(r["items"] for r in results if r["status"] == "ok")
-    print(f"\nDone: {ok_count} succeeded, {err_count} failed, {total_items} total items")
+    partial_count = sum(1 for r in results if r["status"] == "partial")
+    unavailable_count = sum(1 for r in results if r["status"] == "unavailable")
+    total_items = sum(r["items"] for r in results if r["status"] in ("ok", "partial"))
+    print(f"\nDone: {ok_count} succeeded ({partial_count} partial), {err_count} failed, "
+          f"{unavailable_count} unavailable, {total_items} total items")
 
     # Report empty sources as warnings
-    empty = [r for r in results if r["status"] == "ok" and r["items"] == 0]
+    empty = [r for r in results if r["status"] in ("ok", "partial") and r["items"] == 0]
     if empty:
         print("\nWarnings:")
         for r in empty:

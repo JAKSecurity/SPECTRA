@@ -36,6 +36,9 @@ def test_rss_paging_stops_and_deduplicates(stop, caplog):
         result = RSSFetcher("test", rss_config()).fetch()
     assert [item.published for item in result.items] == ["2026-10-28", "2026-10-27", "2026-10-01"]
     assert len({item.id for item in result.items}) == 3
+    assert result.pages_fetched == (2 if stop == "404" else 3)
+    assert result.page_cap_reached is False
+    assert result.window_start_reached is True
     assert [call.args[0] for call in get.call_args_list] == [
         "https://example.test/feed/?topic=security",
         "https://example.test/feed/?topic=security&paged=2",
@@ -57,6 +60,9 @@ def test_rss_paging_warns_at_bounded_cap(limit, expected, caplog):
         result = RSSFetcher("test", config).fetch()
     assert get.call_count == expected
     assert len(result.items) == 2
+    assert result.pages_fetched == expected
+    assert result.page_cap_reached is True
+    assert result.window_start_reached is False
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == "WARNING"
     assert f"page cap ({expected})" in caplog.text
@@ -136,13 +142,15 @@ def test_cisa_retries_before_saving_health(tmp_path, first):
         initial = response(first)
     with patch("src.collect.fetchers.rss.requests.get", side_effect=[initial, response("cisa-alerts.xml")]) as get, patch("src.collect.runner.time.sleep") as sleep:
         results = run_collect(str(config), str(tmp_path / "sources"), "2026-11")
-    assert results[0]["status"] == "ok"
+    # The retry succeeds, but this rolling feed has no pre-window history.
+    assert results[0]["status"] == "partial"
     assert results[0]["items"] == 1
     assert get.call_count == 2
     assert all(call.kwargs["timeout"] == 30 for call in get.call_args_list)
     sleep.assert_called_once_with(1)
     health = json.loads((tmp_path / "sources/2026-11/_health.json").read_text())
     assert health["summary"]["empty"] == health["summary"]["failed"] == 0
+    assert health["summary"]["succeeded"] == health["summary"]["partial"] == 1
 
 
 @pytest.mark.parametrize("status, expected", [(200, "ok"), (503, "error")])

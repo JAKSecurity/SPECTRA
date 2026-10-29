@@ -55,6 +55,9 @@ class RSSFetcher(BaseFetcher):
         end_date = self.config.get("end_date")
         items = []
         seen = set()
+        pages_fetched = 0
+        page_cap_reached = False
+        window_start_reached = None
         for page in range(1, max_pages + 1):
             try:
                 feed = feedparser.parse(url if page == 1 else _page_url(url, page))
@@ -62,6 +65,8 @@ class RSSFetcher(BaseFetcher):
                 if paged and page > 1 and exc.response is not None and exc.response.status_code == 404:
                     break
                 raise
+            # Count parsed pages, including an empty terminal page, but not a 404.
+            pages_fetched += 1
             if not feed.entries:
                 break
             dates = []
@@ -70,6 +75,8 @@ class RSSFetcher(BaseFetcher):
                 if hasattr(entry, "published_parsed") and entry.published_parsed:
                     published = datetime(*entry.published_parsed[:6]).strftime("%Y-%m-%d")
                 dates.append(published)
+                if start_date and published:
+                    window_start_reached = bool(window_start_reached or published < start_date)
                 if start_date and (not published or published < start_date):
                     continue
                 if end_date and (not published or published >= end_date):
@@ -83,6 +90,7 @@ class RSSFetcher(BaseFetcher):
             if start_date and all(date and date < start_date for date in dates):
                 break
             if paged and page == max_pages:
+                page_cap_reached = True
                 logger.warning("Feed %s reached page cap (%d); coverage may be incomplete",
                                self.name, max_pages)
 
@@ -90,6 +98,9 @@ class RSSFetcher(BaseFetcher):
             source=self.name,
             fetched_at=datetime.now(timezone.utc).isoformat(),
             items=items,
+            pages_fetched=pages_fetched,
+            page_cap_reached=page_cap_reached,
+            window_start_reached=window_start_reached,
         )
 
     @staticmethod
