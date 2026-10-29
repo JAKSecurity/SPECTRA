@@ -25,7 +25,8 @@ sources:
     type: rss
     url: "https://cyberscoop.com/feed/"
     paged: true
-    max_pages: 5
+    # October boundary crossed on page 8; two pages of month-end margin.
+    max_pages: 10
     category_hint: news
     enabled: true
 
@@ -78,6 +79,9 @@ sources:
   mit_tech_review_ai:
     type: rss
     url: "https://www.technologyreview.com/topic/artificial-intelligence/feed"
+    # WordPress paging crossed October 1 by page 4, with two pages of margin.
+    paged: true
+    max_pages: 6
     category_hint: ai
     enabled: true
 

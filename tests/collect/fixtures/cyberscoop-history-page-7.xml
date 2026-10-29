@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss version="2.0">
+  <channel>
+    <title>Page 7 | CyberScoop</title>
+    <link>https://cyberscoop.com/</link>
+    <description />
+    <generator>https://wordpress.org/?v=7.1.4</generator>
+    <item>
+      <title>Authorities seize KillSec extortion group infrastructure, arrest 3 alleged members</title>
+      <link>https://cyberscoop.com/killsec-ransomware-group-arrests-operation-killswitch/</link>
+      <guid isPermaLink="false">https://cyberscoop.com/?p=90942</guid>
+      <pubDate>Thu, 01 Oct 2026 19:44:43 +0000</pubDate>
+    </item>
+    <item>
+      <title>AI policy circles targeted in China-linked phishing operation</title>
+      <link>https://cyberscoop.com/china-cyber-espionage-ta419-phishing-us-ai-policy-experts/</link>
+      <guid isPermaLink="false">https://cyberscoop.com/?p=90929</guid>
+      <pubDate>Thu, 01 Oct 2026 14:06:19 +0000</pubDate>
+    </item>
+    <item>
+      <title>OpenAI reveals ‘novel’ encryption bypass used in distillation attack </title>
+      <link>https://cyberscoop.com/openai-moonshot-ai-model-distillation-attack/</link>
+      <guid isPermaLink="false">https://cyberscoop.com/?p=90922</guid>
+      <pubDate>Wed, 30 Sep 2026 22:17:34 +0000</pubDate>
+    </item>
+  </channel>
+</rss>

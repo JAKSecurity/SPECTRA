@@ -1,5 +1,8 @@
-"""Offline response replay for tickets 003 (CISA retry) and 004 (Congress filtering)."""
+"""Offline response replay for source retries, filtering, and feed history."""
+from copy import deepcopy
+import hashlib
 import json
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -112,11 +115,48 @@ def test_rss_undated_page_does_not_stop_paging():
     assert len(result.items) == 2
 
 
-def test_only_cyberscoop_opts_into_rss_paging():
+def test_only_verified_sources_opt_into_rss_paging():
     config_path = Path(__file__).parents[2] / "src/collect/config.yaml"
     sources = yaml.safe_load(config_path.read_text())["sources"]
-    assert [name for name, config in sources.items() if config.get("paged")] == ["cyberscoop"]
-    assert sources["cyberscoop"]["max_pages"] == 5
+    assert {name: config["max_pages"] for name, config in sources.items()
+            if config.get("paged")} == {"cyberscoop": 10, "mit_tech_review_ai": 6}
+
+
+@pytest.mark.parametrize("name, boundary_page, count, earliest", [
+    ("cyberscoop", 8, 14, "2026-10-01"),
+    ("mit_tech_review_ai", 4, 6, "2026-10-02"),
+])
+def test_live_history_shapes_stop_at_window_and_deduplicate_identity(
+    name, boundary_page, count, earliest, caplog,
+):
+    config_path = Path(__file__).parents[2] / "src/collect/config.yaml"
+    config = yaml.safe_load(config_path.read_text())["sources"][name]
+    config.update(start_date="2026-10-01", end_date="2026-11-01")
+    assert config["max_pages"] > boundary_page
+    pages = [response(f"{name}-history-page-{page}.xml")
+             for page in range(1, boundary_page + 1)]
+    # Replay an overlap with a changed reader URL: the publisher GUID owns identity.
+    first_channel = ET.fromstring(pages[0].content).find("channel")
+    duplicate = deepcopy(first_channel.findall("item")[-1])
+    identity = duplicate.findtext("guid")
+    duplicate.find("link").text = "https://example.test/changed-reader-url"
+    second = ET.fromstring(pages[1].content)
+    second.find("channel").append(duplicate)
+    pages[1]._content = ET.tostring(second)
+    with patch("src.collect.fetchers.rss.requests.get", side_effect=pages) as get:
+        result = RSSFetcher(name, config).fetch()
+    assert get.call_count == boundary_page  # No request for the configured margin pages.
+    assert [call.args[0] for call in get.call_args_list] == [
+        config["url"],
+        *[f'{config["url"]}?paged={page}' for page in range(2, boundary_page + 1)],
+    ]
+    assert len(result.items) == len({item.id for item in result.items}) == count
+    assert all("2026-10-01" <= item.published < "2026-11-01" for item in result.items)
+    assert min(item.published for item in result.items) == earliest
+    repeated_id = hashlib.sha256(identity.encode()).hexdigest()[:16]
+    assert sum(item.id == repeated_id for item in result.items) == 1
+    assert all(item.url != duplicate.findtext("link") for item in result.items)
+    assert not caplog.records
 
 
 def response(filename, status=200):

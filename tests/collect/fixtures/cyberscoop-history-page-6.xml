@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss version="2.0">
+  <channel>
+    <title>Page 6 | CyberScoop</title>
+    <link>https://cyberscoop.com/</link>
+    <description />
+    <generator>https://wordpress.org/?v=7.1.4</generator>
+    <item>
+      <title>OpenAI says Iran, Russia used AI journalists, think tanks to influence Western media</title>
+      <link>https://cyberscoop.com/openai-disrupts-russia-iran-ai-influence-operations/</link>
+      <guid isPermaLink="false">https://cyberscoop.com/?p=91023</guid>
+      <pubDate>Thu, 08 Oct 2026 17:44:43 +0000</pubDate>
+    </item>
+    <item>
+      <title>Citrix discloses third actively exploited NetScaler zero-day in less than a week</title>
+      <link>https://cyberscoop.com/citrix-netscaler-third-exploited-zero-day-vulnerability/</link>
+      <guid isPermaLink="false">https://cyberscoop.com/?p=90969</guid>
+      <pubDate>Mon, 05 Oct 2026 23:07:17 +0000</pubDate>
+    </item>
+  </channel>
+</rss>
