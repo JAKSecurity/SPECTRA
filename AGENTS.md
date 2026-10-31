@@ -5,7 +5,9 @@ AI-generated monthly cybersecurity policy digest for DoD/federal practitioners.
 ## Constraints
 
 - **Public/unclassified sources only** -- no classified or CUI
-- **Monthly cadence** -- policy doesn't move fast enough to justify more
+- **Monthly cadence** -- the report is monthly; policy doesn't move fast enough to justify more.
+  Three short-history feeds are captured twice a week between runs so the month is covered
+  (`docs/adr/0002-frequent-capture-for-short-feeds.md`, Jeff 2026-10-31).
 
 ## Pipeline
 
