@@ -43,8 +43,8 @@ AI-generated monthly cybersecurity policy digest for DoD/federal practitioners.
 
 When `_health.json` marks a source `partial`, the issue says so plainly: one
 short "Source coverage" sentence in the Executive Summary naming those sources
-and saying their feeds did not reach back to the start of the month. Do not
-add or swap sources to hide the gap. Options considered:
+and saying their feeds did not reach back to the start of the month. Web
+research may still fill content gaps, but the note stays. Options considered:
 `docs/plans/2026-10-29-short-feed-options.md`.
 
 ## Tech Stack
