@@ -199,3 +199,54 @@ class TestCongressGovFetcher:
 
         assert secret not in str(exc_info.value)
         assert "403" in str(exc_info.value)
+
+
+@pytest.mark.parametrize("origin, api_key", [
+    (origin, key)
+    for origin in ("config", "environment", "keyring")
+    for key in (
+        " FAKE-KEY-123", "FAKE-KEY-123 ", "FAKE-KEY-123\nTAIL",
+        "FAKE-KEY-123\tTAIL", "FAKE-KEY-123\x00TAIL", "FAKE-KEY-123\x7fTAIL",
+        "FAKE-KEY-123\x85TAIL",
+    )
+    # Linux environment variables cannot contain null bytes.
+    if not (origin == "environment" and "\x00" in key)
+])
+def test_malformed_key_is_rejected_before_request(api_key, origin, monkeypatch):
+    config = {"api_key": api_key} if origin == "config" else {}
+    monkeypatch.setenv("CONGRESS_GOV_API_KEY", api_key if origin == "environment" else "")
+    with patch("src.collect.fetchers.congress_gov._keyring_api_key",
+               return_value=api_key if origin == "keyring" else ""), patch(
+        "src.collect.fetchers.congress_gov.requests.get"
+    ) as get:
+        with pytest.raises(ValueError, match="^Congress.gov API key is malformed$"):
+            CongressGovFetcher("congress_gov", config).fetch()
+    get.assert_not_called()
+
+
+def test_well_formed_key_preserves_request_result_and_messages(caplog, capsys):
+    response = MagicMock(status_code=200)
+    response.json.return_value = MOCK_CONGRESS_RESPONSE
+    config = {
+        "api_key": "FAKE-KEY-123", "start_date": "2026-03-01",
+        "end_date": "2026-05-01",
+    }
+    with patch("src.collect.fetchers.congress_gov.requests.get", return_value=response) as get:
+        result = CongressGovFetcher("congress_gov", config).fetch()
+    get.assert_called_once_with(
+        "https://api.congress.gov/v3/bill",
+        params={"format": "json", "limit": 250, "offset": 0,
+                "fromDateTime": "2026-03-01T00:00:00Z", "toDateTime": "2026-05-01T00:00:00Z"},
+        headers={"X-Api-Key": "FAKE-KEY-123"}, timeout=30,
+    )
+    assert result.status == "ok"
+    assert [item.title for item in result.items] == [
+        "HR 1234 - Federal Cybersecurity Workforce Expansion Act",
+        "S 567 - Cybersecurity and Critical Infrastructure Act",
+    ]
+    assert result.pages_fetched == 1
+    assert result.page_cap_reached is False
+    assert result.window_start_reached is None
+    assert not caplog.records
+    captured = capsys.readouterr()
+    assert captured.out == captured.err == ""

@@ -2,9 +2,11 @@ import json
 import os
 from unittest.mock import patch, MagicMock
 
+import pytest
+import requests
 import yaml
 
-from src.collect.runner import load_config, report_window, run_collect
+from src.collect.runner import load_config, main, report_window, run_collect
 
 
 def test_report_window_uses_previous_calendar_month():
@@ -154,3 +156,91 @@ class TestRunCollect:
         assert len(results) == 1
         assert results[0]["status"] == "error"
         assert "Network error" in results[0]["error"]
+
+
+@pytest.mark.parametrize("api_key", [" FAKE-KEY-123", "FAKE-KEY-123\nTAIL"])
+def test_malformed_congress_key_stays_out_of_results_health_and_console(
+    tmp_path, monkeypatch, capsys, caplog, api_key,
+):
+    config = tmp_path / "config.yaml"
+    config.write_text(yaml.safe_dump({"sources": {"congress_gov": {
+        "type": "congress_gov", "api_key": api_key,
+    }}}))
+    output = tmp_path / "output"
+    monkeypatch.setattr("sys.argv", ["collect", str(config), str(output),
+                                     "--report-month", "2026-11"])
+
+    # Exercise requests' actual header validation without sending a request.
+    def prepare_only(url, **kwargs):
+        requests.Request("GET", url, headers=kwargs["headers"]).prepare()
+        raise AssertionError("Malformed header was accepted")
+
+    results = []
+
+    def capture_collect(*args, **kwargs):
+        results.extend(run_collect(*args, **kwargs))
+        return results
+
+    with patch("src.collect.fetchers.congress_gov.requests.get", side_effect=prepare_only), patch(
+        "src.collect.runner.run_collect", side_effect=capture_collect
+    ):
+        main()
+    assert results[0]["error"] == "Congress.gov API key is malformed"
+    health_text = (output / "2026-11/_health.json").read_text()
+    health = json.loads(health_text)
+    assert health["sources"][0]["status"] == "error"
+    assert health["sources"][0]["error"] == "Congress.gov API key is malformed"
+    assert health["warnings"] == ["congress_gov: Congress.gov API key is malformed"]
+    captured = capsys.readouterr()
+    for text in (json.dumps(results), health_text, captured.out, captured.err, caplog.text):
+        assert "FAKE-KEY-123" not in text
+        assert api_key not in text
+    assert "ERR congress_gov: Congress.gov API key is malformed" in captured.out
+
+
+def test_runner_redacts_all_configured_keys_and_preserves_diagnostics(tmp_path, capsys, caplog):
+    config = tmp_path / "config.yaml"
+    config.write_text(yaml.safe_dump({"sources": {
+        "broken": {"type": "rss", "api_key": "FAKE-KEY-123"},
+        "disabled": {"enabled": False, "api_key": "FAKE-KEY-123-LONG"},
+    }}))
+    message = "Failure: FAKE-KEY-123-LONG; FAKE-KEY-123; again FAKE-KEY-123 (retry)"
+    expected = "Failure: [REDACTED]; [REDACTED]; again [REDACTED] (retry)"
+    with patch("src.collect.runner.get_fetcher", side_effect=RuntimeError(message)):
+        results = run_collect(str(config), str(tmp_path / "output"), "2026-11")
+    assert results[0]["error"] == expected
+    health_text = (tmp_path / "output/2026-11/_health.json").read_text()
+    health = json.loads(health_text)
+    assert health["sources"] == results
+    assert health["warnings"] == [f"broken: {expected}"]
+    captured = capsys.readouterr()
+    for text in (json.dumps(results), health_text, captured.out, captured.err, caplog.text):
+        assert "FAKE-KEY-123" not in text
+
+
+@pytest.mark.parametrize("field", [
+    "api_key", "X-Api-Key", "token", "api_token", "access_token",
+    "password", "secret", "client_secret", "Authorization",
+])
+def test_runner_redacts_nested_credentials_literally(tmp_path, field):
+    config = tmp_path / "config.yaml"
+    config.write_text(yaml.safe_dump({"sources": {"broken": {
+        "type": "rss", "headers": {field: "FAKE-KEY-[123].*"},
+        "api_key": "", "password": None,
+    }}}))
+    with patch("src.collect.runner.get_fetcher", side_effect=RuntimeError(
+        "Failed with FAKE-KEY-[123].*; context preserved"
+    )):
+        results = run_collect(str(config), str(tmp_path / "output"), "2026-11")
+    assert results[0]["error"] == "Failed with [REDACTED]; context preserved"
+
+
+def test_runner_redacts_environment_key(tmp_path, monkeypatch):
+    config = tmp_path / "config.yaml"
+    config.write_text(yaml.safe_dump({"sources": {"broken": {"type": "rss"}}}))
+    monkeypatch.setenv("CONGRESS_GOV_API_KEY", "FAKE-KEY-123")
+    with patch("src.collect.runner.get_fetcher", side_effect=RuntimeError(
+        "Failed with FAKE-KEY-123; context preserved"
+    )):
+        results = run_collect(str(config), str(tmp_path / "output"), "2026-11")
+    assert results[0]["error"] == "Failed with [REDACTED]; context preserved"
