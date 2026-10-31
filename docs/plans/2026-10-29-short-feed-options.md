@@ -1,5 +1,7 @@
 # Options for five short-history feeds
 
+**Decision (Jeff, 2026-10-30):** option 3 for the November 2026 issue: keep sources and cadence as they are, and state the partial coverage plainly in the issue (`AGENTS.md`, Source coverage note). Source and cadence changes stay open.
+
 **Recommendation for Jeff's decision:** retain CISA, Nextgov and Dark Reading
 with more frequent collection; replace The Record with Krebs on Security if
 less frequent investigative coverage is acceptable; drop The Verge feed and
