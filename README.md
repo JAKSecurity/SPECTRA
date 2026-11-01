@@ -50,7 +50,8 @@ The pipeline runs through the Codex `SPECTRA Monthly Report` automation. Codex r
 ```bash
 git clone https://github.com/JAKSecurity/SPECTRA.git
 cd SPECTRA
-pip install -r requirements.txt
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
 ```
 
 ### Run Manually
@@ -121,21 +122,62 @@ Folders without captures retain the previous health and preparation behavior.
 The read-only checker uses retained snapshots too; `--source-dir PATH` overrides
 its default issue folder without writing files.
 
-Install **after review**, from the repository root (these files are shipped only;
-no service is installed or started by the implementation):
+Install **after review** (these files are shipped only; no service is installed
+or started by the implementation). The service fixes `WorkingDirectory` to
+`/home/jak3676/src/JAKSecurity/SPECTRA` and the interpreter in `ExecStart` to
+`/home/jak3676/src/JAKSecurity/SPECTRA/.venv/bin/python`. Copying the units from
+another checkout does not change those paths. Before copying or enabling them,
+check that the working directory exists and the interpreter exists and is executable:
+
+```bash
+test -d /home/jak3676/src/JAKSecurity/SPECTRA
+test -x /home/jak3676/src/JAKSecurity/SPECTRA/.venv/bin/python
+```
+
+If this is a fresh checkout without an environment, create it from that
+checkout's root before continuing:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+```
+
+Verify an existing environment rather than recreating it: check the interpreter
+above and its installed dependencies against `requirements.txt`;
+`.venv/bin/python -m pip check` checks for dependency conflicts. If installing
+elsewhere, edit both `WorkingDirectory` and the interpreter path in `ExecStart`
+in `deploy/systemd/spectra-capture.service`, then check those adjusted paths.
+
+A user timer runs only while the user's systemd manager is running. Without
+lingering, login may be the next time that manager starts; enabling the timer
+alone does not keep it running while logged out. `Persistent=true` catches up
+one missed capture at the next manager start and timer activation. It does not
+wake a powered-off machine or provide execution while logged out. If Jeff wants
+runs while logged out, `loginctl enable-linger` is the optional host setting
+that keeps the user manager available at boot and after logout; choose that
+separately. Catch-up cannot recover articles that have already rolled out while
+the workstation was off.
+
+From the prepared repository root, copy and enable the units:
 
 ```bash
 mkdir -p ~/.config/systemd/user
 cp deploy/systemd/spectra-capture.service deploy/systemd/spectra-capture.timer ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user enable --now spectra-capture.timer
+```
+
+After enabling, verify that `spectra-capture.timer` is listed with its next run
+and activates `spectra-capture.service`:
+
+```bash
 systemctl --user list-timers spectra-capture.timer
 ```
 
-The systemd user timer uses the repository `.venv` interpreter. `Persistent=true`
-runs one missed capture after boot when the user manager starts; it cannot
-recover articles that have already rolled out while the workstation was off.
-A failed command exits nonzero for inspection with
+After a capture runs, check `data/sources/YYYY-MM/` under the service's working
+directory, where `YYYY-MM` is the next issue month (for example, a November run
+writes to `data/sources/2026-12/`). It contains timestamped capture snapshots,
+`_captures.json` and `_health.json`. A failed command exits nonzero for inspection with
 `journalctl --user -u spectra-capture.service`. Dated gap warnings also appear
 there. No email or Discord delivery is performed by capture.
 
