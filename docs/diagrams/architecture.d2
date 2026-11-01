@@ -1,7 +1,7 @@
 # SPECTRA — monthly cybersecurity policy digest pipeline.
 # Fans in 16 public sources across 3 categories, runs a 5-stage pipeline
-# driven by a scheduled Claude Code task, and delivers a branded PDF via
-# email and Discord.
+# driven by a scheduled Codex task, and delivers a branded PDF via
+# email and Discord after approval.
 
 ...@~/.claude/skills/d2-diagram/assets/jak-dark
 
@@ -41,9 +41,9 @@ curate: Curate\ncategorize • score • summarize {
   icon: https://api.iconify.design/tabler/robot.svg
 }
 
-claude: Claude\nscheduled task {
+codex: Codex\nscheduled task {
   class: llm
-  icon: https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/anthropic.svg
+  icon: https://api.iconify.design/tabler/robot.svg
 }
 
 render: Render\nmarkdown → PDF {
@@ -56,7 +56,7 @@ digest: Monthly Digest\n7 sections • top 20 per section {
   icon: https://api.iconify.design/tabler/file-text.svg
 }
 
-deliver: Deliver {
+deliver: Deliver\nafter approval {
   class: queue
   icon: https://api.iconify.design/tabler/send.svg
 }
@@ -77,7 +77,7 @@ sources.ai -> collect
 
 collect -> prep: raw items
 prep -> curate: deduped
-curate <-> claude: reason
+curate <-> codex: reason
 curate -> render: markdown draft
 render -> digest
 digest -> deliver
