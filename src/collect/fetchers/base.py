@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import List
 import json
 import os
+import tempfile
 
 
 @dataclass
@@ -58,8 +59,20 @@ class BaseFetcher(ABC):
     def fetch(self) -> FetchResult:
         pass
 
-    def save(self, result: FetchResult, output_dir: str) -> str:
+    def save(self, result: FetchResult, output_dir: str, *, capture: bool = False) -> str:
         os.makedirs(output_dir, exist_ok=True)
+        if capture:
+            # WHY: retain same-day snapshots; docs/adr/0002-frequent-capture-for-short-feeds.md.
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=output_dir, prefix=f"{self.name}_capture_{stamp}_",
+                suffix=".tmp", delete=False,
+            ) as f:
+                json.dump(dict(result.to_dict(), capture=True), f, indent=2)
+            # Publish only complete JSON; interrupted writes remain ignored .tmp files.
+            filepath = f.name.removesuffix(".tmp") + ".json"
+            os.replace(f.name, filepath)
+            return filepath
         date_stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
         filename = f"{self.name}_{date_stamp}.json"
         filepath = os.path.join(output_dir, filename)

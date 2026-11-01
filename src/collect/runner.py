@@ -8,6 +8,7 @@ from datetime import date, datetime, timezone
 import yaml
 
 from .fetchers import get_fetcher
+from .history import capture_coverage, gap_warning, record_coverage
 
 
 def load_config(config_path: str) -> dict:
@@ -44,6 +45,7 @@ def run_collect(
     config_path: str,
     output_base: str = "data/sources",
     report_month: str | None = None,
+    *, capture: bool = False,
 ) -> list:
     """Run all enabled fetchers and write JSON output."""
     config = load_config(config_path)
@@ -62,7 +64,7 @@ def run_collect(
 
     results = []
     for name, source_config in config["sources"].items():
-        if not source_config.get("enabled", True):
+        if not source_config.get("enabled", True) or (capture and not source_config.get("capture")):
             continue
         try:
             windowed_config = dict(source_config)
@@ -87,7 +89,16 @@ def run_collect(
             ):
                 status = "partial"
             result.status = status
-            filepath = fetcher.save(result, month_dir)
+            filepath = (fetcher.save(result, month_dir, capture=True) if capture
+                        else fetcher.save(result, month_dir))
+            coverage = None
+            if source_config.get("capture") and status in ("ok", "partial"):
+                coverage = capture_coverage(month_dir, name, result.to_dict(), start_date, end_date)
+                if coverage is not None:
+                    status = "ok" if coverage["window_start_reached"] and not coverage["gaps"] else "partial"
+                    record_coverage(month_dir, name, coverage)
+                    if coverage["gaps"]:
+                        print(f"WARNING {name}: {gap_warning(coverage['gaps'])}")
             results.append(
                 {
                     "source": name,
@@ -96,7 +107,9 @@ def run_collect(
                     "file": filepath,
                     "pages_fetched": result.pages_fetched,
                     "page_cap_reached": result.page_cap_reached,
-                    "window_start_reached": result.window_start_reached,
+                    "window_start_reached": (coverage["window_start_reached"] if coverage is not None
+                                             else result.window_start_reached),
+                    **({"gaps": coverage["gaps"]} if coverage is not None else {}),
                 }
             )
         except Exception as e:
@@ -159,7 +172,8 @@ def _write_health_report(
         ]
     if partial:
         report["warnings"] = report.get("warnings", []) + [
-            f"{r['source']}: partial coverage (page cap reached or window start not reached)"
+            (f"{r['source']}: partial coverage; {gap_warning(r['gaps'])}" if r.get("gaps") else
+             f"{r['source']}: partial coverage (page cap reached or window start not reached)")
             for r in partial
         ]
     if unavailable:

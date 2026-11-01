@@ -13,6 +13,7 @@ sources:
     enabled: true
 
   cisa_alerts:
+    capture: true
     core: true  # Retry once after one second on error or empty report window.
     type: rss
     url: "https://www.cisa.gov/cybersecurity-advisories/all.xml"
@@ -31,20 +32,22 @@ sources:
     enabled: true
 
   nextgov:
+    capture: true
     type: rss
     url: "https://www.nextgov.com/rss/cybersecurity/"
     category_hint: news
     enabled: true
 
   dark_reading:
+    capture: true
     type: rss
     url: "https://www.darkreading.com/rss.xml"
     category_hint: news
     enabled: true
 
-  the_record:
+  krebs_on_security:
     type: rss
-    url: "https://therecord.media/feed"
+    url: "https://krebsonsecurity.com/feed/"
     category_hint: news
     enabled: true
 
@@ -70,11 +73,7 @@ sources:
     category_hint: ai
     enabled: true
 
-  the_verge_ai:
-    type: rss
-    url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
-    category_hint: ai
-    enabled: true
+  # The Verge AI removed per docs/adr/0002-frequent-capture-for-short-feeds.md.
 
   mit_tech_review_ai:
     type: rss

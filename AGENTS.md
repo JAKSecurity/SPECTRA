@@ -6,7 +6,7 @@ AI-generated monthly cybersecurity policy digest for DoD/federal practitioners.
 
 - **Public/unclassified sources only** -- no classified or CUI
 - **Monthly cadence** -- the report is monthly; policy doesn't move fast enough to justify more.
-  Three short-history feeds are to be captured twice a week between runs (not built yet; packet spectracap)
+  Three short-history feeds are captured twice a week between runs when the shipped user timer is installed
   (`docs/adr/0002-frequent-capture-for-short-feeds.md`, Jeff 2026-10-31).
 
 ## Pipeline

@@ -3,27 +3,44 @@ import json
 import os
 import sys
 
+from src.collect.history import snapshot_time
+
 
 def load_items(source_dir: str) -> list:
     """Load all items from JSON files in a source directory."""
     items = []
+    snapshots = []
     for filepath in sorted(f for f in glob.glob(os.path.join(source_dir, "*.json")) if not os.path.basename(f).startswith("_")):
         with open(filepath) as f:
             data = json.load(f)
-            source_name = data.get("source", "unknown")
-            for item in data["items"]:
-                item["_source"] = source_name
-                items.append(item)
+            snapshots.append(data)
+    captured = {data.get("source") for data in snapshots if data.get("capture")}
+    for data in snapshots:
+        source_name = data.get("source", "unknown")
+        for item in data["items"]:
+            item["_source"] = source_name
+            if source_name in captured:
+                item["_fetched_at"] = snapshot_time(data)
+            items.append(item)
     return items
 
 
 def deduplicate(items: list) -> list:
-    """Keep the first occurrence of each entry at a URL.
+    """Merge captured identities by recency, then keep first entries at a URL.
 
     Nonempty IDs identify entries. If either ID is missing, compare titles
     (case and whitespace normalized) and publication dates instead. Both
     fallback fields must be present; incomplete metadata cannot prove a repeat.
     """
+    # WHY: latest publisher identity survives URL changes across captures (docs/adr/0002-frequent-capture-for-short-feeds.md).
+    latest = {}
+    for item in items:
+        if "_fetched_at" in item and item.get("id"):
+            key = (item["_source"], item["id"])
+            if key not in latest or item["_fetched_at"] >= latest[key]["_fetched_at"]:
+                latest[key] = item
+    items = [item for item in items if "_fetched_at" not in item or not item.get("id")
+             or latest[(item["_source"], item["id"])] is item]
     seen_by_url = {}
     unique = []
     for item in items:

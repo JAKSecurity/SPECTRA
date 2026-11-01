@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.collect.fetchers import get_fetcher
 from src.collect.fetchers.congress_gov import _keyring_api_key
+from src.collect.history import capture_coverage, gap_warning
 from src.collect.runner import load_config, report_window
 
 
@@ -20,6 +21,8 @@ def main():
         help="Issue month in YYYY-MM form; checks the previous calendar month",
     )
     parser.add_argument("--all", action="store_true", help="Check every enabled source in config order")
+    parser.add_argument("--source-dir", type=Path,
+                        help="Issue snapshot folder (default: data/sources/ISSUE)")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     sources = load_config(str(root / "src/collect/config.yaml"))["sources"]
@@ -62,6 +65,21 @@ def main():
                     else "ok" if count else "zero"
                 )
                 detail = status
+                if config.get("capture"):
+                    # Avoid serializing fetcher content into checker output.
+                    current = {"fetched_at": result.fetched_at,
+                               "window_start_reached": result.window_start_reached,
+                               "items": [{"published": i.published} for i in result.items]}
+                    coverage = capture_coverage(
+                        args.source_dir or root / "data/sources" / args.report_month,
+                        name, current, start, end,
+                    )
+                    if coverage is not None:
+                        status = ("ok" if coverage["window_start_reached"] and not coverage["gaps"]
+                                  else "partial")
+                        detail = status
+                        if coverage["gaps"]:
+                            detail += "; " + gap_warning(coverage["gaps"])
         except Exception as error:
             # Print only the exception class; never expose request internals.
             status = "failed"

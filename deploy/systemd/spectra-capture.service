@@ -1,0 +1,9 @@
+[Unit]
+Description=SPECTRA short-feed capture
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/jak3676/src/JAKSecurity/SPECTRA
+ExecStart=/home/jak3676/src/JAKSecurity/SPECTRA/.venv/bin/python -m src.collect.capture

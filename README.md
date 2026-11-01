@@ -2,7 +2,7 @@
 
 **Security Policy, Emerging Cyber Threats, Research & AI**
 
-SPECTRA is an AI-automated monthly cybersecurity policy digest. It collects from 17 public government and industry sources, uses Codex to categorize and summarize items, and renders a branded PDF report in a single scheduled run.
+SPECTRA is an AI-automated monthly cybersecurity policy digest. It collects from 16 public government and industry sources, uses Codex to categorize and summarize items, and renders a branded PDF report in a single scheduled run.
 
 Built for DoD/federal cybersecurity practitioners who need to stay current on policy, threats, and AI developments without manually scanning dozens of feeds.
 
@@ -22,13 +22,13 @@ A monthly PDF digest with seven sections:
 
 Each section is limited to the top 20 items by relevance score. Items are scored 1-10 based on direct impact to federal cyber practitioners.
 
-## Sources (17)
+## Sources (16)
 
 **Government (8):** NIST CSRC, CISA Alerts, CISA KEV Catalog, Federal Register API, Congress.gov API, Executive Orders, FedRAMP Notices, FedRAMP Changelog
 
-**Industry News (4):** CyberScoop, Nextgov/FCW, Dark Reading, The Record
+**Industry News (4):** CyberScoop, Nextgov/FCW, Dark Reading, Krebs on Security
 
-**AI (5):** OpenAI Blog, Google AI Blog, DeepMind Blog, The Verge AI, MIT Technology Review AI
+**AI (4):** OpenAI Blog, Google AI Blog, DeepMind Blog, MIT Technology Review AI
 
 All sources are public and unclassified. See `src/collect/config.yaml` for the full configuration.
 
@@ -91,6 +91,54 @@ Collection writes `_health.json` in the issue month's source directory with per-
 Source status is `ok` when no coverage shortfall is reported, `partial` when the page cap was reached or the window start was not reached, `unavailable` when Congress.gov has no readable key (item count null, not zero), or `error` when collection raises; `ok` with unknown coverage does not certify a complete month.
 Existing summary totals retain successful collections, including partial sources and their items, while separate `partial` and `unavailable` counts and warnings expose coverage gaps; unavailable sources are excluded from empty-source and item totals.
 
+### Twice-weekly Short-feed Capture
+
+Per `docs/adr/0002-frequent-capture-for-short-feeds.md`, capture CISA advisories,
+Nextgov and Dark Reading on Tuesday and Friday at 06:00 local time. Curation,
+review and delivery remain monthly. **Merge this source-list change only after
+`output/2026-11-SPECTRA.pdf` exists**, preserving November's planned sources.
+
+Manual capture: `.venv/bin/python -m src.collect.capture`. A November 10 capture
+writes to `data/sources/2026-12/` with the November content window; December
+captures feed January's issue. Each capture has a timestamp and unique suffix,
+including repeated runs on the same day. Complete capture files are published
+atomically; interrupted writes remain ignored `.tmp` files. Monthly collection keeps its per-day
+filename. Preparation merges captured sources by source and publisher identity,
+keeping the version with the latest fetch timestamp even if its reader URL
+changed, then applies the existing URL deduplication.
+
+Capture writes `_captures.json` with each source's aggregate boundary and dated
+rollover gaps (retained once observed), and `_health.json` for the capture command's selected sources.
+Monthly collection replaces health with the full source list. Raw snapshots
+retain their own boundary evidence. For sources with capture snapshots, health
+is `ok` only if a snapshot reached before the window start and no dated rollover
+gap exists across consecutive successful snapshots, including the final monthly
+fetch. Otherwise it is `partial`; warnings name gap dates. Errors remain errors.
+Counts in health and the checker describe the current fetch, while preparation
+merges retained items. Empty/undated snapshots cannot establish overlap; this
+check detects observed rollovers, not proof of every publisher article.
+Folders without captures retain the previous health and preparation behavior.
+The read-only checker uses retained snapshots too; `--source-dir PATH` overrides
+its default issue folder without writing files.
+
+Install **after review**, from the repository root (these files are shipped only;
+no service is installed or started by the implementation):
+
+```bash
+mkdir -p ~/.config/systemd/user
+cp deploy/systemd/spectra-capture.service deploy/systemd/spectra-capture.timer ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now spectra-capture.timer
+systemctl --user list-timers spectra-capture.timer
+```
+
+The systemd user timer uses the repository `.venv` interpreter. `Persistent=true`
+runs one missed capture after boot when the user manager starts; it cannot
+recover articles that have already rolled out while the workstation was off.
+A failed command exits nonzero for inspection with
+`journalctl --user -u spectra-capture.service`. Dated gap warnings also appear
+there. No email or Discord delivery is performed by capture.
+
 ### Automated Monthly Run
 
 The Codex `SPECTRA Monthly Report` automation runs at 5 AM on the first of each month. It collects the previous calendar month's sources, curates the report, renders the PDF, and presents the artifacts for review. Email and Discord delivery occur only after approval.
@@ -101,7 +149,7 @@ The Codex `SPECTRA Monthly Report` automation runs at 5 AM on the first of each 
 python -m pytest tests/ -q
 ```
 
-59 tests covering fetchers, prep/dedup, draft assembly, and PDF rendering.
+Tests cover fetchers, prep/dedup, draft assembly, and PDF rendering.
 
 ## Project Structure
 
@@ -114,7 +162,7 @@ src/
   curate/           Item loading, dedup, and draft assembly
   render/           PDF template and rendering (reportlab)
 scripts/            Shell entry points for each stage
-tests/              59 tests (pytest)
+tests/              Offline tests (pytest)
 docs/               Design spec and backlog
 ```
 
