@@ -46,7 +46,14 @@ SPECTRA is a monthly PDF digest with seven sections. Each section is limited to 
 
 ---
 
-## Source List (17 Active Sources)
+## Source List (16 Active Sources)
+
+Updated 2026-10-31 per `docs/adr/0002-frequent-capture-for-short-feeds.md`:
+Krebs replaces The Record; The Verge feed is removed. CISA advisories, Nextgov
+and Dark Reading also have twice-weekly capture, feeding the next issue's
+content window. The report remains monthly. See `README.md` for retention,
+coverage rules and the user timer installation procedure. Apply only after
+the November issue exists; dated implementation counts below describe history.
 
 ### Government / Policy (8 sources)
 
@@ -68,16 +75,15 @@ SPECTRA is a monthly PDF digest with seven sections. Each section is limited to 
 | CyberScoop | RSS | `cyberscoop` |
 | Nextgov/FCW | RSS | `nextgov` |
 | Dark Reading | RSS | `dark_reading` |
-| The Record (Recorded Future) | RSS | `the_record` |
+| Krebs on Security | RSS | `krebs_on_security` |
 
-### AI / Agentic (5 sources)
+### AI / Agentic (4 sources)
 
 | Source | Access Method | Config Key |
 |--------|---------------|------------|
 | OpenAI Blog | RSS | `openai_blog` |
 | Google AI Blog | RSS | `google_ai_blog` |
 | DeepMind Blog | RSS | `deepmind_blog` |
-| The Verge / AI | RSS | `the_verge_ai` |
 | MIT Technology Review / AI | RSS | `mit_tech_review_ai` |
 
 ### Sources Evaluated and Skipped
@@ -115,7 +121,7 @@ One monthly Codex automation starts on the first of each month at 5 AM. It produ
 ```
 SPECTRA Monthly Report automation (5 AM, 1st of month)
   |
-  +--> Collect (17 sources)     --> data/sources/YYYY-MM/*.json + _health.json
+  +--> Collect (16 sources)     --> data/sources/YYYY-MM/*.json + _health.json
   +--> Prep (load + dedup)      --> data/drafts/prepped_YYYY-MM.json
   +--> Curate (categorize/summarize/score) --> data/drafts/curated_YYYY-MM.json
   +--> Draft assembly           --> data/drafts/YYYY-MM-SPECTRA.md

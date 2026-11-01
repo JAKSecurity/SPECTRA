@@ -1,0 +1,9 @@
+[Unit]
+Description=Capture SPECTRA short feeds Tuesday and Friday mornings
+
+[Timer]
+OnCalendar=Tue,Fri *-*-* 06:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
