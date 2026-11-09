@@ -10,6 +10,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import (
     Flowable,
     HRFlowable,
+    KeepTogether,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -25,6 +26,7 @@ MUTED = HexColor("#666666")
 LIGHT_GRAY = HexColor("#f0f2f5")
 DARK_TEXT = HexColor("#1a1a1a")
 LINK_COLOR = HexColor("#1a7a6d")
+REPOSITORY_URL = "https://github.com/JAKSecurity/SPECTRA"
 
 # Section heading colors — each section gets its own accent
 SECTION_COLORS = {
@@ -276,6 +278,15 @@ def _build_styles():
             leading=14,
             textColor=DARK_TEXT,
         ),
+        "repository_note": ParagraphStyle(
+            "SPRepositoryNote",
+            parent=styles["Normal"],
+            fontSize=7.5,
+            leading=9,
+            alignment=1,
+            spaceBefore=8,
+            textColor=MUTED,
+        ),
     }
 
 
@@ -360,30 +371,42 @@ def render_pdf(md_text: str, output_path: str) -> str:
                     if section_title == "Upcoming Conferences"
                     else st["body"]
                 )
-                story.append(
+                item_flowables = [
                     Paragraph(
                         _clean_for_reportlab(item["title"]), title_style
                     )
-                )
+                ]
                 if item.get("source_url"):
                     source_url = escape(item["source_url"], quote=True)
                     source_text = f'<link href="{source_url}">{_clean_for_reportlab(item["source_line"])} - {_clean_for_reportlab(item["source_url"])}</link>'
-                    story.append(Paragraph(source_text, source_style))
+                    item_flowables.append(Paragraph(source_text, source_style))
                 elif item.get("source_line"):
-                    story.append(
+                    item_flowables.append(
                         Paragraph(
                             _clean_for_reportlab(item["source_line"]),
                             source_style,
                         )
                     )
                 if item.get("summary"):
-                    story.append(
+                    item_flowables.append(
                         Paragraph(
                             _clean_for_reportlab(item["summary"]), body_style
                         )
                     )
+                # Keep a story heading attached to its source and summary so a
+                # page break cannot leave an orphaned title at the page bottom.
+                story.append(KeepTogether(item_flowables))
 
         story.append(Spacer(1, 12))
+
+    repository_link = escape(REPOSITORY_URL, quote=True)
+    story.append(
+        Paragraph(
+            "SPECTRA is developed and maintained at "
+            f'<link href="{repository_link}">{REPOSITORY_URL}</link>.',
+            st["repository_note"],
+        )
+    )
 
     doc.build(story, onFirstPage=_page_footer, onLaterPages=_page_footer)
     return output_path

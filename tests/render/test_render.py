@@ -1,5 +1,8 @@
 import os
 
+from reportlab.platypus import KeepTogether, Paragraph
+
+import src.render.render as render_module
 from src.render.render import parse_markdown, render_pdf
 
 
@@ -83,6 +86,45 @@ class TestParseMarkdown:
 
 
 class TestRenderPdf:
+    def test_adds_repository_link_after_report_content(self, tmp_path, monkeypatch):
+        captured_story = []
+
+        class CapturingDocument:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def build(self, story, **kwargs):
+                captured_story.extend(story)
+
+        monkeypatch.setattr(render_module, "SimpleDocTemplate", CapturingDocument)
+        render_pdf(SAMPLE_MARKDOWN, str(tmp_path / "unused.pdf"))
+
+        repository_notes = [
+            flowable
+            for flowable in captured_story
+            if isinstance(flowable, Paragraph)
+            and "github.com/JAKSecurity/SPECTRA" in flowable.getPlainText()
+        ]
+        assert len(repository_notes) == 1
+        assert captured_story[-1] is repository_notes[0]
+        assert "https://github.com/JAKSecurity/SPECTRA" in repository_notes[0].text
+
+    def test_keeps_item_title_source_and_summary_together(self, tmp_path, monkeypatch):
+        captured_story = []
+
+        class CapturingDocument:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def build(self, story, **kwargs):
+                captured_story.extend(story)
+
+        monkeypatch.setattr(render_module, "SimpleDocTemplate", CapturingDocument)
+        render_pdf(SAMPLE_MARKDOWN, str(tmp_path / "unused.pdf"))
+
+        grouped_items = [flowable for flowable in captured_story if isinstance(flowable, KeepTogether)]
+        assert len(grouped_items) == 3
+
     def test_creates_pdf_file(self, tmp_path):
         output_path = str(tmp_path / "test_output.pdf")
         render_pdf(SAMPLE_MARKDOWN, output_path)
