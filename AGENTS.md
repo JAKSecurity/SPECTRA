@@ -27,7 +27,12 @@ AI-generated monthly cybersecurity policy digest for DoD/federal practitioners.
 
 ## Schedule
 
-- **5 AM on 1st of each month**: the Codex `SPECTRA Monthly Report` automation produces review artifacts
+- **5 AM UTC (midnight Eastern) on 1st of each month**: the Codex `SPECTRA Monthly Report` automation produces review artifacts.
+  It starts in this folder and runs unattended in Codex's workspace sandbox with approvals off. Network and its
+  notes folder (`~/.codex/automations/spectra-monthly-report/`) come from the untracked `.codex/config.toml`
+  here (`[sandbox_workspace_write]` with `network_access = true` and that folder in `writable_roots`; recreate it
+  after a fresh clone); without that file, collection fails at its first write or fetch. `.git` stays read-only in the sandbox,
+  so `git fetch` failing there is expected, not a reason to stop (AI Assistant security assessment, W9, 2026-11-17).
 - **Last day of month**: Morning briefing note -- "SPECTRA report coming tomorrow"
 - **1st of month**: Morning briefing note -- completion status or error flag
 
