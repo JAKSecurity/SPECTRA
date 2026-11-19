@@ -1,0 +1,156 @@
+# JAK Dark — Tokyo Night house theme for D2 diagrams.
+#
+# Copied 2026-11-19 from the retired Claude d2-diagram skill
+# (archive-2026-claude-dotfiles/skills/d2-diagram/assets/jak-dark.d2).
+# WHY: kept in the repository so the diagram renders from a fresh clone;
+# the old ~/.claude path no longer exists (SPECTRA ticket 202).
+#
+# Usage: spread it with `...@jak-dark`, then use its classes (service, data,
+# auth, external, llm, agent, queue, user, success, compute, panel).
+
+vars: {
+  d2-config: {
+    dark-theme-id: 200
+    pad: 40
+    sketch: false
+    center: true
+  }
+}
+
+# Palette reference (Tokyo Night). Keep these in sync with references/palette.md.
+#   bg        #1a1b26   background
+#   panel     #24283b   slightly lighter panel fill for containers
+#   fg        #c0caf5   primary text
+#   fg2       #a9b1d6   secondary text
+#   blue      #7aa2f7   primary flow / request path / control
+#   purple    #bb9af7   data / state / storage
+#   green     #9ece6a   success / happy path / allowed
+#   red       #f7768e   auth / error / denied
+#   yellow    #e0af68   external / third-party
+#   cyan      #7dcfff   async / streaming / events
+#   orange    #ff9e64   compute / processing
+
+classes: {
+  # Primary request-flow components: APIs, services, routers, orchestrators.
+  service: {
+    style: {
+      fill: "#1f2335"
+      stroke: "#7aa2f7"
+      stroke-width: 2
+      font-color: "#c0caf5"
+      border-radius: 6
+    }
+  }
+
+  # Data stores: databases, caches, object stores, queues of persisted records.
+  data: {
+    shape: cylinder
+    style: {
+      fill: "#2a2339"
+      stroke: "#bb9af7"
+      stroke-width: 2
+      font-color: "#c0caf5"
+    }
+  }
+
+  # Auth / policy / denial / error. Anything that blocks or enforces.
+  auth: {
+    shape: diamond
+    style: {
+      fill: "#2e2030"
+      stroke: "#f7768e"
+      stroke-width: 2
+      font-color: "#c0caf5"
+    }
+  }
+
+  # External / third-party. SaaS APIs, external identity providers, vendor APIs.
+  external: {
+    style: {
+      fill: "#2d2820"
+      stroke: "#e0af68"
+      stroke-width: 2
+      font-color: "#c0caf5"
+      border-radius: 6
+      stroke-dash: 3
+    }
+  }
+
+  # LLM / AI model calls. Separate from service to highlight model-bearing nodes.
+  llm: {
+    style: {
+      fill: "#2b2238"
+      stroke: "#bb9af7"
+      stroke-width: 2
+      font-color: "#c0caf5"
+      border-radius: 6
+    }
+  }
+
+  # Agent — an autonomous component that calls tools and reasons.
+  agent: {
+    style: {
+      fill: "#1f2b2e"
+      stroke: "#7dcfff"
+      stroke-width: 2
+      font-color: "#c0caf5"
+      border-radius: 6
+    }
+  }
+
+  # Queue / stream / event bus. Async work carrier.
+  queue: {
+    shape: queue
+    style: {
+      fill: "#1f2733"
+      stroke: "#7dcfff"
+      stroke-width: 2
+      font-color: "#c0caf5"
+    }
+  }
+
+  # Person / user / operator.
+  user: {
+    shape: person
+    style: {
+      fill: "#2a2a1f"
+      stroke: "#e0af68"
+      stroke-width: 2
+      font-color: "#c0caf5"
+    }
+  }
+
+  # Success terminal / happy-path output.
+  success: {
+    style: {
+      fill: "#1f2a1f"
+      stroke: "#9ece6a"
+      stroke-width: 2
+      font-color: "#c0caf5"
+      border-radius: 6
+    }
+  }
+
+  # Compute / worker / processing node.
+  compute: {
+    style: {
+      fill: "#2d2520"
+      stroke: "#ff9e64"
+      stroke-width: 2
+      font-color: "#c0caf5"
+      border-radius: 6
+    }
+  }
+
+  # Panel — a grouping container (trust zone, microservice boundary, VPC).
+  panel: {
+    style: {
+      fill: "#24283b"
+      stroke: "#565f89"
+      stroke-width: 1
+      stroke-dash: 4
+      font-color: "#a9b1d6"
+      border-radius: 8
+    }
+  }
+}

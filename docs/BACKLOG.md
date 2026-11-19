@@ -1,6 +1,6 @@
 # SPECTRA Backlog
 
-> **Status: Maintenance.** C1, C2 and C4 are delivered; C3 is reopened only for ticket 202 (diagram regeneration after the frequent-capture close-out). External email and Discord delivery remains a separate approval-gated action. Per-phase checklist is preserved below as historical record.
+> **Status: Complete.** All four capabilities are delivered. External email and Discord delivery remains a separate approval-gated action. Per-phase checklist is preserved below as historical record.
 
 ## Capabilities
 
@@ -8,7 +8,7 @@
 |----|------|--------|-------|----------|------------|-------------|
 | C1 | Foundation | Delivered | Phase 1 | P1 |  | Python project + collect/curate/render pipeline + first test issue (sources, dedup, markdown→PDF, scheduled task wiring) |
 | C2 | Full source coverage | Delivered | Phase 2 | P1 | C1 | Federal Register, Congress.gov, CISA KEV, AI vendor/news feeds, Executive Orders, FedRAMP, The Record, RSS hygiene, monthly cadence |
-| C3 | Automation & polish | In Progress | Phase 3 | P2 | C2 | Branded PDF template, relevance scoring + keyword tuning, source health monitoring with empty-source warnings |
+| C3 | Automation & polish | Delivered | Phase 3 | P2 | C2 | Branded PDF template, relevance scoring + keyword tuning, source health monitoring with empty-source warnings |
 | C4 | Integration | Delivered | Phase 4 | P1 | C3 | projects.yaml + briefing integration, scheduled monthly run, email + Discord delivery, Brain entry, TELOS Live Pulse |
 
 ## Active
@@ -21,9 +21,9 @@
 | 004 | congress_gov returns bills but keyword/date filters not applied (relevance) | Delivered | P2 | C3 | Y |
 | 201 | Congress.gov resolutions link to the bill URL path instead of the resolution path | Open | P3 | C3 | Y |
 | 200 | Restore SPECTRA after post-Claude automation cutover omission | Delivered | P1 | C4 | Y |
-| 202 | Close out frequent capture for short feeds (ADR 0002): timer verified, held branch removed, diagram regeneration pending | In Progress | P2 | C3 | Y |
+| 202 | Close out frequent capture for short feeds (ADR 0002): timer verified, held branch removed, diagram regenerated | Delivered | P2 | C3 | Y |
 
-_The Codex-native monthly automation is active and produces review artifacts; external delivery remains approval-gated. Source-health detection works (warnings fire). Feed-repair tickets 001-004 delivered (003 and 004 on 2026-10-26, live-verified). Frequent capture (ADR 0002) runs Tuesday and Friday from a workstation user timer since 2026-11-09. Open: 201 (resolution links), 202 (diagram regeneration)._
+_The Codex-native monthly automation is active and produces review artifacts; external delivery remains approval-gated. Source-health detection works (warnings fire). Feed-repair tickets 001-004 delivered (003 and 004 on 2026-10-26, live-verified). Frequent capture (ADR 0002) runs Tuesday and Friday from a workstation user timer since 2026-11-09. Open: 201 (resolution links)._
 
 ## Historical detail (pre-canonicalization)
 

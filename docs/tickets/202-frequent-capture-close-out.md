@@ -1,9 +1,8 @@
 # 202: Close out frequent capture for short feeds (ADR 0002)
 
-**Status**: In Progress  **Priority**: P2  **Type**: Chore
+**Status**: Delivered  **Priority**: P2  **Type**: Chore
 **Created**: 2026-11-18
 **Capability**: C3
-**Waiting on**: Jeff's OK to install the d2 diagram tool; check 2026-11-25
 
 ## Summary
 
@@ -42,11 +41,12 @@ no sandbox setup and the monthly run is unchanged.
       at 2026-11-18 22:32.
 - [x] Full test suite passes on `main` (231 passed, 2026-11-18).
 - [x] `codex/q-spectracap` branch and queue worktree removed.
-- [ ] `docs/diagrams/architecture.svg` and `.png` regenerated from
-      `architecture.d2`. Commit `43a14b9` relabeled the curator from Claude
-      to Codex and marked delivery "after approval" in the source only; the
-      published SVG still shows Claude. Blocked: `d2` is not installed on the
-      workstation, and its install script is a third-party download that
-      needs Jeff's OK. The theme the source imports
-      (`~/.claude/skills/d2-diagram/assets/jak-dark`) also exists only in
-      `archive-2026-claude-dotfiles`.
+- [x] `docs/diagrams/architecture.svg` regenerated from `architecture.d2`
+      (2026-11-19). Commit `43a14b9` had relabeled the curator from Claude to
+      Codex and marked delivery "after approval" in the source only. Jeff
+      approved installing d2 (v0.9.0, checksum verified, `~/.local/bin/d2`).
+      The house theme the source imported from the retired
+      `~/.claude/skills/d2-diagram/` path now lives beside it as
+      `docs/diagrams/jak-dark.d2`. The stale `architecture.png` was removed
+      rather than regenerated: nothing references it, the house standard ships
+      only `.d2` and `.svg`, and d2's PNG export would download a Chromium build.
